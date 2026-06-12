@@ -308,7 +308,7 @@ body {
 .verdict.close { color: var(--orange); }
 .verdict.try { color: var(--red); }
 
-/* ── chat with yaai ─────────────────────────────────────── */
+/* ── chat with yaa ──────────────────────────────────────── */
 .call-frame {
   border: 3px solid var(--ink); border-radius: var(--radius); background: var(--paper);
   box-shadow: var(--shadow); overflow: hidden; margin-bottom: 1rem;
@@ -333,7 +333,7 @@ body {
 .bubble .b-thai { font-size: 1.15rem; }
 .bubble .b-roman { font-size: .82rem; font-weight: 500; opacity: .65; font-family: var(--font-display); }
 .bubble .b-en { font-size: .82rem; font-weight: 500; opacity: .8; font-family: var(--font-display); }
-.bubble.yaai { align-self: flex-start; background: var(--gold-soft); border-bottom-left-radius: 4px; }
+.bubble.yaa { align-self: flex-start; background: var(--gold-soft); border-bottom-left-radius: 4px; }
 .bubble.kid { align-self: flex-end; background: var(--pink-soft); border-bottom-right-radius: 4px; }
 .bubble .b-speak { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0 .2rem; }
 .choices { padding: 0 1rem 1rem; display: flex; flex-direction: column; gap: .6rem; }

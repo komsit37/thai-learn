@@ -151,7 +151,7 @@ function renderHome() {
     <div class="bigbtn-row">
       <button class="bigbtn call" onclick="renderTalk()">
         <span class="big-emoji">📞👵</span>
-        Call Yaai!
+        Call Yaa!
         <small>Practice a real conversation with Grandma</small>
       </button>
       <button class="bigbtn badges" onclick="renderBadges()">
@@ -512,12 +512,12 @@ function finishSpeak() {
     xp: gained * 15,
     retry: `startSpeak('${g.mid}')`,
     next: nextM ? `renderMission('${nextM.id}')` : `renderTalk()`,
-    nextLabel: nextM ? `${nextM.emoji} Next Mission →` : '📞 Call Yaai! →',
+    nextLabel: nextM ? `${nextM.emoji} Next Mission →` : '📞 Call Yaa! →',
     mid: g.mid,
   });
 }
 
-// ── TALK: video call with Yaai ───────────────────────────
+// ── TALK: video call with Yaa ───────────────────────────
 const chat = { step: 0, log: [] };
 
 function renderTalk() {
@@ -525,22 +525,22 @@ function renderTalk() {
   chat.step = 0;
   chat.log = [];
   drawChat();
-  setTimeout(() => yaaiSpeaks(), 600);
+  setTimeout(() => yaaSpeaks(), 600);
 }
 
 function drawChat() {
-  const step = YAAI_CHAT[chat.step];
-  const done = chat.step >= YAAI_CHAT.length;
+  const step = YAA_CHAT[chat.step];
+  const done = chat.step >= YAA_CHAT.length;
   app.innerHTML = html`
     ${header()}
     <div class="screen-head">
       <button class="backbtn" onclick="renderHome()">←</button>
-      <div><h2>📞 Video Call</h2><div class="sub">Talking with Yaai (Grandma)</div></div>
+      <div><h2>📞 Video Call</h2><div class="sub">Talking with Yaa (Grandma)</div></div>
     </div>
     <div class="call-frame">
       <div class="call-head">
         <div class="avatar">👵</div>
-        <div><b>Yaai ยาย</b><span style="font-size:.8rem">Bangkok, Thailand 🇹🇭</span></div>
+        <div><b>Yaa ย่า</b><span style="font-size:.8rem">Bangkok, Thailand 🇹🇭</span></div>
         <span class="live" style="margin-left:auto">● LIVE</span>
       </div>
       <div class="chat-log" id="chat-log">
@@ -553,7 +553,7 @@ function drawChat() {
             <div class="b-en">${esc(b.en)}</div>
           </div>`).join('')}
       </div>
-      ${!done && step && chat.log.length && chat.log[chat.log.length - 1].who === 'yaai' ? html`
+      ${!done && step && chat.log.length && chat.log[chat.log.length - 1].who === 'yaa' ? html`
         <div class="choices">
           <span class="choice-label">Your turn — pick what to say:</span>
           ${step.replies.map((r, i) => html`
@@ -572,26 +572,26 @@ function drawChat() {
   if (log) log.scrollTop = log.scrollHeight;
 }
 
-function yaaiSpeaks() {
-  const step = YAAI_CHAT[chat.step];
+function yaaSpeaks() {
+  const step = YAA_CHAT[chat.step];
   if (!step) return finishChat();
-  chat.log.push({ who: 'yaai', ...step.yaai });
+  chat.log.push({ who: 'yaa', ...step.yaa });
   drawChat();
-  Audio_.speak(step.yaai.thai);
+  Audio_.speak(step.yaa.thai);
 }
 
 function kidSays(i) {
-  const step = YAAI_CHAT[chat.step];
+  const step = YAA_CHAT[chat.step];
   const r = step.replies[i];
   chat.log.push({ who: 'kid', thai: r.thai, roman: r.roman, en: r.en });
   drawChat();
   Audio_.pop();
   Audio_.speak(r.thai, { onend: () => {
     chat.step++;
-    setTimeout(() => yaaiSpeaks(), 500);
+    setTimeout(() => yaaSpeaks(), 500);
   }});
   // safety: if TTS is unavailable, still advance
-  if (!Audio_.thaiVoice) { chat.step++; setTimeout(() => yaaiSpeaks(), 1200); }
+  if (!Audio_.thaiVoice) { chat.step++; setTimeout(() => yaaSpeaks(), 1200); }
 }
 
 function finishChat() {
@@ -607,7 +607,7 @@ function finishChat() {
     ${header()}
     <div class="result-card">
       <div class="r-stars"><span class="lit">💬</span><span class="lit">👵</span><span class="lit">❤️</span></div>
-      <h2>You talked with Yaai!</h2>
+      <h2>You talked with Yaa!</h2>
       <p>A whole conversation in Thai — the real one in Bangkok is going to be amazing.<br>
          Try it again and pick different answers!</p>
       ${first ? '<div class="xp-burst">+50 XP ⚡</div>' : ''}

@@ -145,32 +145,32 @@ const MISSIONS = [
 ];
 
 // ─────────────────────────────────────────────────────────────
-// Video call with Yaai (grandma) — scripted conversation.
-// Each step: yaai says a line, kid picks one of the replies.
+// Video call with Yaa (ย่า, dad's-side grandma) — scripted conversation.
+// Each step: yaa says a line, kid picks one of the replies.
 // ─────────────────────────────────────────────────────────────
-const YAAI_CHAT = [
+const YAA_CHAT = [
   {
-    yaai: { thai: 'สวัสดีจ้ะหลาน!', roman: 'sà-wàt-dii jâ lǎan!', en: 'Hello, my grandchild!', jp: 'こんにちは、まごちゃん！' },
+    yaa: { thai: 'สวัสดีจ้ะหลาน!', roman: 'sà-wàt-dii jâ lǎan!', en: 'Hello, my grandchild!', jp: 'こんにちは、まごちゃん！' },
     replies: [
       { thai: 'สวัสดีครับ', roman: 'sà-wàt-dii khráp', kana: 'サワッディー クラップ', en: 'Hello! 🙏', emoji: '🙏' },
     ],
   },
   {
-    yaai: { thai: 'สบายดีไหมจ๊ะ?', roman: 'sà-baai-dii mǎi já?', en: 'How are you?', jp: '元気？' },
+    yaa: { thai: 'สบายดีไหมจ๊ะ?', roman: 'sà-baai-dii mǎi já?', en: 'How are you?', jp: '元気？' },
     replies: [
       { thai: 'สบายดีครับ', roman: 'sà-baai-dii khráp', kana: 'サバーイディー クラップ', en: "I'm great!", emoji: '💪' },
-      { thai: 'สบายดีครับ แล้วยายล่ะครับ', roman: 'sà-baai-dii khráp, láew yaai lâ khráp', kana: 'サバーイディー クラップ、レーオ ヤーイ ラ クラップ', en: "I'm great! And you, Grandma?", emoji: '😊', bonus: true },
+      { thai: 'สบายดีครับ แล้วย่าล่ะครับ', roman: 'sà-baai-dii khráp, láew yâa lâ khráp', kana: 'サバーイディー クラップ、レーオ ヤー ラ クラップ', en: "I'm great! And you, Grandma?", emoji: '😊', bonus: true },
     ],
   },
   {
-    yaai: { thai: 'กินข้าวหรือยังจ๊ะ?', roman: 'kin khâao rǔe yang já?', en: 'Have you eaten yet?', jp: 'ごはん食べた？' },
+    yaa: { thai: 'กินข้าวหรือยังจ๊ะ?', roman: 'kin khâao rǔe yang já?', en: 'Have you eaten yet?', jp: 'ごはん食べた？' },
     replies: [
       { thai: 'กินแล้วครับ อร่อยมาก!', roman: 'kin láew khráp, à-ròi mâak!', kana: 'キン レーオ クラップ、アロイ マーク！', en: 'I ate already — it was delicious!', emoji: '😋' },
       { thai: 'ยังครับ ผมหิว', roman: 'yang khráp, phǒm hǐw', kana: 'ヤン クラップ、ポム ヒウ', en: "Not yet — I'm hungry!", emoji: '🍽️' },
     ],
   },
   {
-    yaai: { thai: 'หลานชอบกินอะไรจ๊ะ?', roman: 'lǎan châwp kin à-rai já?', en: 'What do you like to eat?', jp: '何を食べるのが好き？' },
+    yaa: { thai: 'หลานชอบกินอะไรจ๊ะ?', roman: 'lǎan châwp kin à-rai já?', en: 'What do you like to eat?', jp: '何を食べるのが好き？' },
     replies: [
       { thai: 'ผมชอบข้าวผัดครับ', roman: 'phǒm châwp khâao phàt khráp', kana: 'ポム チョープ カーオ パット クラップ', en: 'I like fried rice!', emoji: '🍛' },
       { thai: 'ผมชอบไก่ทอดครับ', roman: 'phǒm châwp kài thâwt khráp', kana: 'ポム チョープ ガイ トート クラップ', en: 'I like fried chicken!', emoji: '🍗' },
@@ -178,20 +178,20 @@ const YAAI_CHAT = [
     ],
   },
   {
-    yaai: { thai: 'โอ้โห พูดไทยเก่งมาก!', roman: 'ôo-hǒo, phûut thai kèng mâak!', en: 'WOW, your Thai is so good!', jp: 'わあ、タイ語じょうずだね！' },
+    yaa: { thai: 'โอ้โห พูดไทยเก่งมาก!', roman: 'ôo-hǒo, phûut thai kèng mâak!', en: 'WOW, your Thai is so good!', jp: 'わあ、タイ語じょうずだね！' },
     replies: [
       { thai: 'ขอบคุณครับ ผมพูดไทยได้นิดหน่อยครับ', roman: 'khàwp-khun khráp, phǒm phûut thai dâai nít-nòi khráp', kana: 'コープクン クラップ、ポム プート タイ ダーイ ニットノイ クラップ', en: 'Thank you! I speak a little Thai!', emoji: '🗣️' },
     ],
   },
   {
-    yaai: { thai: 'ยายคิดถึงหลานนะ', roman: 'yaai khít-thǔeng lǎan ná', en: 'Grandma misses you', jp: 'おばあちゃん、会いたいよ' },
+    yaa: { thai: 'ย่าคิดถึงหลานนะ', roman: 'yâa khít-thǔeng lǎan ná', en: 'Grandma misses you', jp: 'おばあちゃん、会いたいよ' },
     replies: [
-      { thai: 'ผมคิดถึงยายเหมือนกันครับ', roman: 'phǒm khít-thǔeng yaai mǔean-kan khráp', kana: 'ポム キットトゥン ヤーイ ムアンガン クラップ', en: 'I miss you too, Grandma!', emoji: '🥺' },
-      { thai: 'รักยายนะครับ', roman: 'rák yaai ná khráp', kana: 'ラック ヤーイ ナ クラップ', en: 'I love you, Grandma!', emoji: '❤️' },
+      { thai: 'ผมคิดถึงย่าเหมือนกันครับ', roman: 'phǒm khít-thǔeng yâa mǔean-kan khráp', kana: 'ポム キットトゥン ヤー ムアンガン クラップ', en: 'I miss you too, Grandma!', emoji: '🥺' },
+      { thai: 'รักย่านะครับ', roman: 'rák yâa ná khráp', kana: 'ラック ヤー ナ クラップ', en: 'I love you, Grandma!', emoji: '❤️' },
     ],
   },
   {
-    yaai: { thai: 'เจอกันที่กรุงเทพฯ นะจ๊ะ!', roman: 'joe kan thîi krung-thêep ná já!', en: 'See you in Bangkok!', jp: 'バンコクで会おうね！' },
+    yaa: { thai: 'เจอกันที่กรุงเทพฯ นะจ๊ะ!', roman: 'joe kan thîi krung-thêep ná já!', en: 'See you in Bangkok!', jp: 'バンコクで会おうね！' },
     replies: [
       { thai: 'เจอกันใหม่ครับ บ๊ายบาย!', roman: 'joe kan mài khráp, báai-baai!', kana: 'ジュー ガン マイ クラップ、バイバイ！', en: 'See you soon, bye bye!', emoji: '👋' },
     ],
@@ -208,7 +208,7 @@ const BADGES = [
   { id: 'ninja',       emoji: '🥷', name: 'Number Ninja',   desc: 'Mastered Thai numbers' },
   { id: 'golden-ear',  emoji: '👂', name: 'Golden Ear',     desc: '3 stars in a Listen game' },
   { id: 'brave-voice', emoji: '🎤', name: 'Brave Voice',    desc: '3 stars in a Speak challenge' },
-  { id: 'chatterbox',  emoji: '💬', name: 'Chatterbox',     desc: 'Finished a whole call with Yaai' },
+  { id: 'chatterbox',  emoji: '💬', name: 'Chatterbox',     desc: 'Finished a whole call with Yaa' },
   { id: 'streak-3',    emoji: '🔥', name: 'On Fire',        desc: 'Practiced 3 days in a row' },
   { id: 'streak-7',    emoji: '🌋', name: 'Unstoppable',    desc: 'Practiced 7 days in a row' },
   { id: 'legend',      emoji: '🏆', name: 'Bangkok Legend', desc: 'Finished every single mission' },

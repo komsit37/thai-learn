@@ -29,7 +29,7 @@ Works great on a laptop or iPad (use Chrome there too).
   - *Listen game*: hear a phrase, tap the right meaning (builds on his listening strength).
   - *Speak challenge*: real speech recognition in Thai grades his pronunciation —
     "PERFECT! เก่งมาก!" with confetti when he nails it.
-- **📞 Call Yaai**: a simulated video call with grandma — she speaks Thai out loud,
+- **📞 Call Yaa**: a simulated video call with grandma — she speaks Thai out loud,
   he picks (and hears) his replies. The exact conversation he'll have in real life.
 - **Gamification**: stars, XP, daily streak, 10 badges, and a tuk-tuk countdown of
   days until the trip.
@@ -44,7 +44,7 @@ Works great on a laptop or iPad (use Chrome there too).
 - The mic game needs mic permission on first use; if the browser has no speech
   recognition it falls back to honor-system practice ("I said it!").
 - A great routine for the month: one mission's *Learn* per weekend, games on
-  weekdays (10 min), and **Call Yaai** together every few days — then try a real
+  weekdays (10 min), and **Call Yaa** together every few days — then try a real
   video call with the family.
 
 No build step, no dependencies — plain HTML/CSS/JS. Fonts load from Google Fonts.
