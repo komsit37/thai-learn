@@ -116,7 +116,8 @@ function levenshtein(a, b) {
 }
 
 // Returns 'great' | 'close' | 'try' comparing recognized alternatives vs target.
-function gradeSpeech(alternatives, targetThai) {
+// threshold rises as the kid masters a phrase (see Adapt.speakThreshold).
+function gradeSpeech(alternatives, targetThai, threshold = 0.62) {
   const target = normalizeThai(targetThai);
   if (!target) return 'great';
   let best = 0;
@@ -127,7 +128,7 @@ function gradeSpeech(alternatives, targetThai) {
     const sim = 1 - levenshtein(a, target) / Math.max(a.length, target.length);
     best = Math.max(best, sim);
   }
-  if (best >= 0.62) return 'great';
-  if (best >= 0.35) return 'close';
+  if (best >= threshold) return 'great';
+  if (best >= Math.max(0.3, threshold - 0.25)) return 'close';
   return 'try';
 }

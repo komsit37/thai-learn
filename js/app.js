@@ -54,6 +54,20 @@ function daysToTrip() {
 
 function fillName(text) { return text.replaceAll('___', state.name || '___'); }
 
+// phrases tagged with their adaptive-engine key ("missionId:index")
+function keyedPhrases(m) { return m.phrases.map((p, i) => ({ ...p, key: m.id + ':' + i })); }
+
+// all quiz-able phrases from missions whose Learn step is done
+function reviewPool() {
+  const pool = [];
+  MISSIONS.forEach((m, i) => {
+    if (missionUnlocked(i) && prog(m.id).learn) {
+      keyedPhrases(m).forEach(p => { if (!p.blank) pool.push(p); });
+    }
+  });
+  return pool;
+}
+
 // ── badges ───────────────────────────────────────────────
 function earnBadge(id) {
   if (state.badges.includes(id)) return;
@@ -146,8 +160,17 @@ function starRow(mid) {
 function renderHome() {
   speechSynthesis.cancel();
   let firstUnfinished = MISSIONS.findIndex((m, i) => missionUnlocked(i) && starsFor(m.id) < 7);
+  const pool = reviewPool();
+  const due = Adapt.dueCount(pool.map(p => p.key));
   app.innerHTML = html`
     ${header()}
+    ${pool.length ? html`
+      <button class="bigbtn power" onclick="startPowerUp()">
+        <span class="big-emoji">⚡</span>
+        Daily Power-Up
+        ${due ? `<span class="due-badge">${due} to rescue!</span>` : ''}
+        <small>Quick review of the words your brain is about to forget</small>
+      </button>` : ''}
     <div class="bigbtn-row">
       <button class="bigbtn call" onclick="renderTalk()">
         <span class="big-emoji">📞👵</span>
@@ -163,6 +186,8 @@ function renderHome() {
     <div class="path">
       ${MISSIONS.map((m, i) => {
         const unlocked = missionUnlocked(i);
+        const st = Adapt.missionStats(m.id, m.phrases.length);
+        const showLvl = unlocked && prog(m.id).learn;
         return html`
         <div class="mission-card c-${m.color} ${unlocked ? '' : 'locked'}"
              onclick="${unlocked ? `renderMission('${m.id}')` : `Audio_.boop()`}">
@@ -171,7 +196,8 @@ function renderHome() {
           <div>
             <div class="m-num">Mission ${m.num}</div>
             <h3>${m.title}</h3>
-            <div class="m-stars">${starRow(m.id)}</div>
+            <div class="m-stars">${starRow(m.id)}
+              ${showLvl ? `<span class="lvl">${st.emoji} ${st.label}</span>` : ''}</div>
           </div>
         </div>`;
       }).join('')}
@@ -280,35 +306,71 @@ function finishLearn(mid) {
   `;
 }
 
-// ── LISTEN game ──────────────────────────────────────────
-const listenGame = { mid: null, rounds: [], idx: 0, score: 0, answered: false };
+// ── LISTEN game (adaptive) ───────────────────────────────
+// Weak / overdue phrases come up more often (Adapt.pickWeighted),
+// and each phrase's quiz gets harder as its mastery box grows:
+//   easy   → emoji + English options
+//   medium → English only (no emoji crutch)
+//   hard   → Thai-script options (read to match what you heard!)
+const listenGame = { mid: null, power: false, pool: [], rounds: [], idx: 0, score: 0, answered: false };
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
 
+function buildListenRounds(pool, n) {
+  return Adapt.pickWeighted(pool, n).map(target => {
+    const wrong = shuffle(pool.filter(p => p.key !== target.key)).slice(0, 3);
+    return { target, options: shuffle([target, ...wrong]), mode: Adapt.listenMode(target.key) };
+  });
+}
+
 function startListen(mid) {
   const m = MISSIONS.find(x => x.id === mid);
-  const pool = m.phrases.filter(p => !p.blank);
+  const pool = keyedPhrases(m).filter(p => !p.blank);
   listenGame.mid = mid;
-  listenGame.rounds = shuffle(pool).slice(0, Math.min(8, pool.length)).map(target => {
-    const wrong = shuffle(pool.filter(p => p !== target)).slice(0, 3);
-    return { target, options: shuffle([target, ...wrong]) };
-  });
+  listenGame.power = false;
+  listenGame.rounds = buildListenRounds(pool, Math.min(8, pool.length));
   listenGame.idx = 0;
   listenGame.score = 0;
   renderListenRound();
 }
 
+function startPowerUp() {
+  const pool = reviewPool();
+  if (!pool.length) return Audio_.boop();
+  listenGame.mid = null;
+  listenGame.power = true;
+  listenGame.rounds = buildListenRounds(pool, Math.min(8, pool.length));
+  listenGame.idx = 0;
+  listenGame.score = 0;
+  renderListenRound();
+}
+
+const LISTEN_MODE_CHIP = { easy: '🌱 new', medium: '⭐ no hints', hard: '🏆 read the Thai!' };
+
+function listenOption(o, i, mode) {
+  if (mode === 'hard') {
+    return html`<button class="option thai-opt" id="opt-${i}" onclick="answerListen(${i})">${esc(o.thai)}</button>`;
+  }
+  return html`
+    <button class="option" id="opt-${i}" onclick="answerListen(${i})">
+      ${mode === 'easy' ? `<span class="o-emoji">${o.emoji}</span>` : ''}${esc(o.en)}
+    </button>`;
+}
+
 function renderListenRound() {
   const g = listenGame;
-  const m = MISSIONS.find(x => x.id === g.mid);
   if (g.idx >= g.rounds.length) return finishListen();
+  const m = g.power ? null : MISSIONS.find(x => x.id === g.mid);
   const r = g.rounds[g.idx];
   g.answered = false;
   app.innerHTML = html`
     ${header()}
     <div class="screen-head">
-      <button class="backbtn" onclick="renderMission('${g.mid}')">←</button>
-      <div><h2>👂 Listen & Tap</h2><div class="sub">${m.emoji} ${m.title}</div></div>
+      <button class="backbtn" onclick="${g.power ? 'renderHome()' : `renderMission('${g.mid}')`}">←</button>
+      <div>
+        <h2>${g.power ? '⚡ Daily Power-Up' : '👂 Listen & Tap'}</h2>
+        <div class="sub">${g.power ? 'Mixed review — rescue your words!' : `${m.emoji} ${m.title}`}</div>
+      </div>
     </div>
     <div class="quiz-top">
       <span class="score-pill">Q${g.idx + 1}/${g.rounds.length}</span>
@@ -316,12 +378,12 @@ function renderListenRound() {
       <span class="score-pill">✅ ${g.score}</span>
     </div>
     <button class="earbtn" onclick="Audio_.speak(${JSON.stringify(r.target.thai)})">👂</button>
-    <div class="quiz-hint">Tap the ear to hear it again — then tap what it means!</div>
+    <div class="quiz-hint">
+      <span class="diff-chip">${LISTEN_MODE_CHIP[r.mode]}</span><br>
+      ${r.mode === 'hard' ? 'You know this one — now READ it: tap the Thai you heard!' : 'Tap the ear to hear it again — then tap what it means!'}
+    </div>
     <div class="options">
-      ${r.options.map((o, i) => html`
-        <button class="option" id="opt-${i}" onclick="answerListen(${i})">
-          <span class="o-emoji">${o.emoji}</span>${esc(o.en)}
-        </button>`).join('')}
+      ${r.options.map((o, i) => listenOption(o, i, r.mode)).join('')}
     </div>
   `;
   setTimeout(() => Audio_.speak(r.target.thai), 400);
@@ -333,7 +395,8 @@ function answerListen(i) {
   g.answered = true;
   const r = g.rounds[g.idx];
   const chosen = r.options[i];
-  const correct = chosen === r.target;
+  const correct = chosen.key === r.target.key;
+  Adapt.record(r.target.key, 'listen', correct);
   const btn = document.getElementById('opt-' + i);
   if (correct) {
     g.score++;
@@ -342,7 +405,7 @@ function answerListen(i) {
   } else {
     btn.classList.add('wrong');
     Audio_.boop();
-    const right = r.options.indexOf(r.target);
+    const right = r.options.findIndex(o => o.key === r.target.key);
     document.getElementById('opt-' + right).classList.add('reveal');
   }
   setTimeout(() => { g.idx++; renderListenRound(); }, correct ? 900 : 1700);
@@ -357,6 +420,7 @@ function starsFromRatio(ratio) {
 
 function finishListen() {
   const g = listenGame;
+  if (g.power) return finishPowerUp();
   const stars = starsFromRatio(g.score / g.rounds.length);
   const p = prog(g.mid);
   const gained = Math.max(0, stars - p.listen);
@@ -379,6 +443,29 @@ function finishListen() {
   });
 }
 
+function finishPowerUp() {
+  const g = listenGame;
+  const xp = g.score * 3;
+  addXP(xp);
+  bumpStreak();
+  save();
+  const due = Adapt.dueCount(reviewPool().map(p => p.key));
+  if (g.score >= g.rounds.length * 0.75) { confetti(); Audio_.fanfare(); } else Audio_.ding();
+  app.innerHTML = html`
+    ${header()}
+    <div class="result-card">
+      <div class="r-stars"><span class="lit">⚡</span></div>
+      <h2>${g.score === g.rounds.length ? 'ALL WORDS RESCUED!' : 'Brain charged up!'}</h2>
+      <p>You got ${g.score} of ${g.rounds.length} — ${due ? `${due} words still need rescuing.` : 'every word is safe for today!'}</p>
+      <div class="xp-burst">+${xp} XP ⚡</div>
+      <div class="navrow">
+        <button class="navbtn" onclick="renderHome()">🏠 Home</button>
+        <button class="navbtn primary" onclick="startPowerUp()">⚡ Once more!</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderGameResult({ stars, title, detail, xp, retry, next, nextLabel, mid }) {
   app.innerHTML = html`
     ${header()}
@@ -398,13 +485,16 @@ function renderGameResult({ stars, title, detail, xp, retry, next, nextLabel, mi
   `;
 }
 
-// ── SPEAK challenge ──────────────────────────────────────
+// ── SPEAK challenge (adaptive) ───────────────────────────
+// Weak phrases come up more often; the pass threshold rises with
+// mastery (Adapt.speakThreshold). Mastered phrases ("memory mode")
+// don't auto-play first — he has to produce them from the script.
 const speakGame = { mid: null, rounds: [], idx: 0, passed: 0 };
 
 function startSpeak(mid) {
   const m = MISSIONS.find(x => x.id === mid);
   speakGame.mid = mid;
-  speakGame.rounds = shuffle(m.phrases).slice(0, Math.min(5, m.phrases.length));
+  speakGame.rounds = Adapt.pickWeighted(keyedPhrases(m), Math.min(5, m.phrases.length));
   speakGame.idx = 0;
   speakGame.passed = 0;
   renderSpeakRound();
@@ -416,6 +506,7 @@ function renderSpeakRound() {
   if (g.idx >= g.rounds.length) return finishSpeak();
   const ph = g.rounds[g.idx];
   const thai = fillName(ph.thai);
+  const memoryMode = Adapt.strength(ph.key) >= 4;
   const supported = Audio_.recognitionSupported();
   app.innerHTML = html`
     ${header()}
@@ -425,7 +516,7 @@ function renderSpeakRound() {
     </div>
     <div class="phrase-stage">
       <div class="phrase-card">
-        <div class="counter-pill">say this out loud!</div>
+        <div class="counter-pill">${memoryMode ? '🏆 memory mode — no help!' : 'say this out loud!'}</div>
         <div class="p-emoji">${ph.emoji}</div>
         <div class="p-thai">${esc(thai)}</div>
         <div class="p-roman">${esc(fillName(ph.roman))}</div>
@@ -436,21 +527,25 @@ function renderSpeakRound() {
         </div>
       </div>
       ${supported ? html`
-        <button class="micbtn" id="micbtn" onclick="doListen(${JSON.stringify(thai)})">🎤</button>
-        <div class="speak-result" id="speak-result">Tap the mic, then say it loud and proud!</div>
+        <button class="micbtn" id="micbtn" onclick="doListen()">🎤</button>
+        <div class="speak-result" id="speak-result">${memoryMode ? 'You\'ve mastered this one — say it without listening first!' : 'Tap the mic, then say it loud and proud!'}</div>
       ` : html`
         <div class="speak-result">🎤 Mic game needs Google Chrome.<br>Say it out loud 3 times, then tap below!</div>
-        <button class="navbtn primary" style="flex:none;padding:.8rem 2rem" onclick="speakPass(true)">💪 I said it!</button>
+        <button class="navbtn primary" style="flex:none;padding:.8rem 2rem" onclick="speakSelfPass()">💪 I said it!</button>
       `}
       <div class="navrow">
         <button class="navbtn" onclick="speakSkip()">Skip →</button>
       </div>
     </div>
   `;
-  setTimeout(() => Audio_.speak(thai), 350);
+  // mastered phrases must come from memory — no warm-up audio
+  if (!memoryMode) setTimeout(() => Audio_.speak(thai), 350);
 }
 
-async function doListen(targetThai) {
+async function doListen() {
+  const g = speakGame;
+  const ph = g.rounds[g.idx];
+  const targetThai = fillName(ph.thai);
   const btn = document.getElementById('micbtn');
   const out = document.getElementById('speak-result');
   speechSynthesis.cancel();
@@ -459,9 +554,10 @@ async function doListen(targetThai) {
   out.innerHTML = '<span class="verdict">👂 Listening… speak now!</span>';
   try {
     const { alternatives } = await Audio_.listen();
-    const grade = gradeSpeech(alternatives, targetThai);
+    const grade = gradeSpeech(alternatives, targetThai, Adapt.speakThreshold(ph.key));
     const heard = esc(alternatives[0] || '');
     if (grade === 'great') {
+      Adapt.record(ph.key, 'speak', true);
       Audio_.fanfare(); confetti(35);
       out.innerHTML = `<span class="verdict great">🌟 PERFECT! เก่งมาก!</span><span class="heard">I heard: ${heard}</span>`;
       setTimeout(() => speakPass(true), 1400);
@@ -470,6 +566,7 @@ async function doListen(targetThai) {
       Audio_.ding();
       out.innerHTML = `<span class="verdict close">🔆 SO close! Try once more!</span><span class="heard">I heard: ${heard}</span>`;
     } else {
+      Adapt.record(ph.key, 'speak', false);
       Audio_.boop();
       out.innerHTML = `<span class="verdict try">💭 Hmm, listen again and copy the sound!</span><span class="heard">I heard: ${heard}</span>`;
     }
@@ -488,7 +585,16 @@ function speakPass(passed) {
   speakGame.idx++;
   renderSpeakRound();
 }
-function speakSkip() { speakGame.idx++; renderSpeakRound(); }
+// honor-system fallback when speech recognition is unavailable
+function speakSelfPass() {
+  Adapt.record(speakGame.rounds[speakGame.idx].key, 'speak', true);
+  speakPass(true);
+}
+function speakSkip() {
+  Adapt.record(speakGame.rounds[speakGame.idx].key, 'speak', false);
+  speakGame.idx++;
+  renderSpeakRound();
+}
 
 function finishSpeak() {
   const g = speakGame;
@@ -670,6 +776,7 @@ function saveSettings() {
 function resetAll() {
   if (!confirm('Erase ALL progress and start over?')) return;
   localStorage.removeItem(STORAGE_KEY);
+  Adapt.resetAll();
   location.reload();
 }
 

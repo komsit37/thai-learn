@@ -153,6 +153,28 @@ body {
 
 /* big call-to-action rows on home */
 .bigbtn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: .4rem 0 1.4rem; }
+.bigbtn.power {
+  display: block; width: 100%; margin: .4rem 0 1rem;
+  background: linear-gradient(105deg, var(--purple-soft), var(--pink-soft));
+  position: relative;
+}
+.due-badge {
+  position: absolute; top: -.9rem; right: 1rem;
+  background: var(--red); color: white; border: 3px solid var(--ink);
+  border-radius: 999px; padding: .1rem .7rem; font-size: .8rem; font-weight: 700;
+  box-shadow: var(--shadow-sm); animation: bob 1.4s ease-in-out infinite;
+}
+.lvl {
+  display: inline-block; margin-left: .4rem;
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
+  padding: .05rem .5rem; vertical-align: middle;
+}
+.diff-chip {
+  display: inline-block; font-size: .78rem; font-weight: 700;
+  background: var(--purple-soft); border: 2px solid var(--ink); border-radius: 999px;
+  padding: .1rem .6rem; margin-bottom: .25rem;
+}
 .bigbtn {
   border: 3px solid var(--ink); border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -283,6 +305,7 @@ body {
 }
 .option:hover { transform: translateY(-3px) rotate(-.5deg); }
 .option .o-emoji { display: block; font-size: 2.2rem; margin-bottom: .25rem; }
+.option.thai-opt { font-family: var(--font-thai); font-size: 1.25rem; font-weight: 700; padding: 1.2rem .8rem; }
 .option.correct { background: var(--green-soft); animation: yay .45s; }
 .option.wrong { background: var(--red-soft); animation: shake .4s; }
 .option.reveal { outline: 4px dashed var(--green); }

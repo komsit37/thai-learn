@@ -29,10 +29,22 @@ Works great on a laptop or iPad (use Chrome there too).
   - *Listen game*: hear a phrase, tap the right meaning (builds on his listening strength).
   - *Speak challenge*: real speech recognition in Thai grades his pronunciation —
     "PERFECT! เก่งมาก!" with confetti when he nails it.
-- **📞 Call Yaa**: a simulated video call with grandma — she speaks Thai out loud,
-  he picks (and hears) his replies. The exact conversation he'll have in real life.
-- **Gamification**: stars, XP, daily streak, 10 badges, and a tuk-tuk countdown of
-  days until the trip.
+- **📞 Call Yaa**: a simulated video call with grandma (ย่า, dad's side) — she
+  speaks Thai out loud, he picks (and hears) his replies. The exact conversation
+  he'll have in real life.
+- **Adaptive difficulty** (`js/adapt.js`): every phrase has a mastery level
+  (Leitner box 0–4) updated on each listen/speak answer.
+  - Weak and overdue phrases show up more often in every game.
+  - Listen quiz gets harder per phrase as he masters it: emoji + English options
+    → English only → **Thai-script options** (he must read what he heard).
+  - Speak challenge: the pronunciation pass bar rises with mastery, and mastered
+    phrases go into "memory mode" (no warm-up audio — produce it yourself).
+  - **⚡ Daily Power-Up** on the home screen: spaced-repetition mixed review
+    across all learned missions (intervals 0/1/2/4/7 days), with a "words to
+    rescue" counter so early missions stay fresh until the trip.
+- **Gamification**: stars, XP, daily streak, 10 badges, mission skill levels
+  (🌱 Rookie → ⭐ Pro → 🏆 Superstar), and a tuk-tuk countdown of days until
+  the trip.
 
 ## Parent notes
 
