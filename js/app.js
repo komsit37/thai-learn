@@ -2,29 +2,100 @@
 // Mission: Bangkok — app shell, state, screens, games
 // ─────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'mission-bangkok-v1';
+// ── Profile store ────────────────────────────────────────
+// All progress lives in localStorage as a list of profiles.
+// `state` points at the ACTIVE profile object (null on the picker).
+// save() writes the whole store back. Each profile carries its own
+// progress, badges, streak, and adaptive-engine store, so it can be
+// exported/imported to move a kid between devices.
+const PROFILES_KEY = 'mission-bangkok-profiles-v1';
+const OLD_STATE_KEY = 'mission-bangkok-v1';        // pre-profile single save
+const OLD_ADAPT_KEY = 'mission-bangkok-adapt-v1';
 
-const state = loadState();
+let store = loadStore();
+let state = activeProfile();   // null until a profile is chosen
 
-function loadState() {
-  let s = {};
-  try { s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch {}
+function loadStore() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(PROFILES_KEY)); } catch {}
+  if (!s || !Array.isArray(s.profiles)) s = { activeId: null, profiles: [] };
+  s.profiles = s.profiles.map(normalizeProfile);
+  migrateOldSave(s);
+  return s;
+}
+
+function persist() { localStorage.setItem(PROFILES_KEY, JSON.stringify(store)); }
+
+function activeProfile() { return store.profiles.find(p => p.id === store.activeId) || null; }
+
+function save() {
+  if (!state) return;
+  state.updatedAt = new Date().toISOString();
+  persist();
+}
+
+function newId() { return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function normalizeProfile(p) {
+  p = p || {};
   return {
-    name: s.name || '',
-    tripDate: s.tripDate || null,
-    xp: s.xp || 0,
-    progress: s.progress || {},     // missionId -> {learn:bool, listen:0-3, speak:0-3}
-    badges: s.badges || [],
-    streak: s.streak || { last: null, count: 0 },
-    chatDone: s.chatDone || false,
+    id: p.id || newId(),
+    avatar: p.avatar || AVATARS[0],
+    name: p.name || 'Agent',
+    tripDate: p.tripDate || null,
+    xp: p.xp || 0,
+    progress: p.progress || {},        // missionId -> questId -> {learn,listen,speak}
+    badges: p.badges || [],
+    streak: p.streak || { last: null, count: 0 },
+    callDone: p.callDone || {},        // missionId -> bool
+    adapt: p.adapt || {},              // spaced-repetition store
+    activeMission: p.activeMission || MISSIONS[0].id,
+    createdAt: p.createdAt || new Date().toISOString(),
+    updatedAt: p.updatedAt || new Date().toISOString(),
   };
 }
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function makeProfile(name, avatar) {
+  const p = normalizeProfile({ name, avatar });
+  const d = new Date(); d.setDate(d.getDate() + 30);   // default trip 30 days out
+  p.tripDate = d.toISOString().slice(0, 10);
+  return p;
+}
 
-function prog(mid) {
-  if (!state.progress[mid]) state.progress[mid] = { learn: false, listen: 0, speak: 0 };
-  return state.progress[mid];
+// One-time migration of the old single-profile save into a profile.
+function migrateOldSave(s) {
+  if (s.profiles.length) return;
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem(OLD_STATE_KEY)); } catch {}
+  if (!old || !old.name) return;
+  let oldAdapt = {};
+  try { oldAdapt = JSON.parse(localStorage.getItem(OLD_ADAPT_KEY)) || {}; } catch {}
+  const reAdapt = {};   // old keys "questId:index" → "bangkok:questId:index"
+  Object.entries(oldAdapt).forEach(([k, v]) => { reAdapt['bangkok:' + k] = v; });
+  const p = normalizeProfile({
+    name: old.name,
+    tripDate: old.tripDate || null,
+    xp: old.xp || 0,
+    progress: { bangkok: old.progress || {} },
+    badges: old.badges || [],
+    streak: old.streak || { last: null, count: 0 },
+    callDone: { bangkok: !!old.chatDone },
+    adapt: reAdapt,
+  });
+  s.profiles.push(p);
+  s.activeId = p.id;
+}
+
+// ── Active mission / quest helpers ───────────────────────
+function cur() { return MISSIONS.find(m => m.id === state.activeMission) || MISSIONS[0]; }
+function quests() { return cur().quests; }
+function findQuest(qid) { return cur().quests.find(q => q.id === qid); }
+
+function prog(qid) {
+  const mid = state.activeMission;
+  if (!state.progress[mid]) state.progress[mid] = {};
+  if (!state.progress[mid][qid]) state.progress[mid][qid] = { learn: false, listen: 0, speak: 0 };
+  return state.progress[mid][qid];
 }
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
@@ -43,7 +114,8 @@ function bumpStreak() {
 function addXP(n) { state.xp += n; save(); }
 
 function totalStars() {
-  return Object.values(state.progress).reduce((t, p) => t + (p.listen || 0) + (p.speak || 0) + (p.learn ? 1 : 0), 0);
+  const mp = state.progress[state.activeMission] || {};
+  return Object.values(mp).reduce((t, p) => t + (p.listen || 0) + (p.speak || 0) + (p.learn ? 1 : 0), 0);
 }
 
 function daysToTrip() {
@@ -54,26 +126,29 @@ function daysToTrip() {
 
 function fillName(text) { return text.replaceAll('___', state.name || '___'); }
 
-// phrases tagged with their adaptive-engine key ("missionId:index")
-function keyedPhrases(m) { return m.phrases.map((p, i) => ({ ...p, key: m.id + ':' + i })); }
+// phrases tagged with their adaptive-engine key ("missionId:questId:index")
+function keyedPhrases(q) { return q.phrases.map((p, i) => ({ ...p, key: `${state.activeMission}:${q.id}:${i}` })); }
 
-// all quiz-able phrases from missions whose Learn step is done
+// all quiz-able phrases from quests (in the active mission) whose Learn step is done
 function reviewPool() {
   const pool = [];
-  MISSIONS.forEach((m, i) => {
-    if (missionUnlocked(i) && prog(m.id).learn) {
-      keyedPhrases(m).forEach(p => { if (!p.blank) pool.push(p); });
+  quests().forEach((q, i) => {
+    if (questUnlocked(i) && prog(q.id).learn) {
+      keyedPhrases(q).forEach(p => { if (!p.blank) pool.push(p); });
     }
   });
   return pool;
 }
 
 // ── badges ───────────────────────────────────────────────
+// all badges visible for the active mission (mission-specific + global)
+function allBadges() { return [...cur().badges, ...GLOBAL_BADGES]; }
+
 function earnBadge(id) {
   if (state.badges.includes(id)) return;
   state.badges.push(id);
   save();
-  const b = BADGES.find(x => x.id === id);
+  const b = allBadges().find(x => x.id === id);
   if (!b) return;
   Audio_.tada();
   const t = document.createElement('div');
@@ -83,14 +158,22 @@ function earnBadge(id) {
   setTimeout(() => t.remove(), 3500);
 }
 
-function checkMissionBadges(mid) {
-  const p = prog(mid);
-  const complete = p.learn && p.listen > 0 && p.speak > 0;
-  if (mid === 'hello' && p.learn) earnBadge('first-wai');
-  if (mid === 'family' && p.learn) earnBadge('family-star');
-  if (mid === 'food' && complete) earnBadge('foodie');
-  if (mid === 'numbers' && p.learn && p.listen >= 2) earnBadge('ninja');
-  if (MISSIONS.every(m => prog(m.id).learn)) earnBadge('legend');
+// Evaluate the active mission's declarative badge rules after any progress.
+function badgeRuleMet(when) {
+  if (!when) return false;
+  if (when.quest) {
+    const p = prog(when.quest);
+    if (when.need === 'learn') return p.learn;
+    if (when.need === 'complete') return p.learn && p.listen > 0 && p.speak > 0;
+    if (when.need === 'listen2') return p.learn && p.listen >= 2;
+  }
+  if (when.allQuests === 'learn') return quests().every(q => prog(q.id).learn);
+  if (when.call) return !!state.callDone[state.activeMission];
+  return false;
+}
+
+function checkQuestBadges() {
+  cur().badges.forEach(b => { if (badgeRuleMet(b.when)) earnBadge(b.id); });
 }
 
 // ── confetti ─────────────────────────────────────────────
@@ -125,6 +208,7 @@ function header() {
     <div class="topbar">
       <div class="logo" onclick="renderHome()">MISSION:<em>BANGKOK</em> 🛺</div>
       <div class="stats">
+        <span class="chip who" onclick="renderPicker()" title="Switch player">${state.avatar} ${esc(state.name)}</span>
         <span class="chip">🔥 ${state.streak.count}</span>
         <span class="chip">⭐ ${totalStars()}</span>
         <span class="chip">⚡ ${state.xp} XP</span>
@@ -143,8 +227,8 @@ function header() {
   `;
 }
 
-function missionUnlocked(i) {
-  return i === 0 || prog(MISSIONS[i - 1].id).learn;
+function questUnlocked(i) {
+  return i === 0 || prog(quests()[i - 1].id).learn;
 }
 
 function starsFor(mid) {
@@ -159,11 +243,18 @@ function starRow(mid) {
 
 function renderHome() {
   speechSynthesis.cancel();
-  let firstUnfinished = MISSIONS.findIndex((m, i) => missionUnlocked(i) && starsFor(m.id) < 7);
+  const m = cur();
+  const qs = quests();
+  let firstUnfinished = qs.findIndex((q, i) => questUnlocked(i) && starsFor(q.id) < 7);
   const pool = reviewPool();
   const due = Adapt.dueCount(pool.map(p => p.key));
+  const call = m.call;
   app.innerHTML = html`
     ${header()}
+    <div class="screen-head">
+      <button class="backbtn" onclick="renderMissionSelect()">←</button>
+      <div><h2>${m.emoji} ${m.title}</h2><div class="sub">Pick a quest, agent!</div></div>
+    </div>
     ${pool.length ? html`
       <button class="bigbtn power" onclick="startPowerUp()">
         <span class="big-emoji">⚡</span>
@@ -172,31 +263,32 @@ function renderHome() {
         <small>Quick review of the words your brain is about to forget</small>
       </button>` : ''}
     <div class="bigbtn-row">
+      ${call ? html`
       <button class="bigbtn call" onclick="renderTalk()">
-        <span class="big-emoji">📞👵</span>
-        Call Yaa!
-        <small>Practice a real conversation with Grandma</small>
-      </button>
+        <span class="big-emoji">${call.homeEmoji || '📞'}</span>
+        ${call.label || 'Video Call'}
+        <small>${call.blurb || 'Practice a real conversation'}</small>
+      </button>` : ''}
       <button class="bigbtn badges" onclick="renderBadges()">
         <span class="big-emoji">🎖️</span>
         My Badges
-        <small>${state.badges.length} of ${BADGES.length} collected</small>
+        <small>${state.badges.length} of ${allBadges().length} collected</small>
       </button>
     </div>
     <div class="path">
-      ${MISSIONS.map((m, i) => {
-        const unlocked = missionUnlocked(i);
-        const st = Adapt.missionStats(m.id, m.phrases.length);
-        const showLvl = unlocked && prog(m.id).learn;
+      ${qs.map((q, i) => {
+        const unlocked = questUnlocked(i);
+        const st = Adapt.missionStats(`${m.id}:${q.id}`, q.phrases.length);
+        const showLvl = unlocked && prog(q.id).learn;
         return html`
-        <div class="mission-card c-${m.color} ${unlocked ? '' : 'locked'}"
-             onclick="${unlocked ? `renderMission('${m.id}')` : `Audio_.boop()`}">
+        <div class="mission-card c-${q.color} ${unlocked ? '' : 'locked'}"
+             onclick="${unlocked ? `renderMission('${q.id}')` : `Audio_.boop()`}">
           ${i === firstUnfinished ? '<span class="here">YOU ARE HERE</span>' : ''}
-          <div class="m-emoji">${unlocked ? m.emoji : '🔒'}</div>
+          <div class="m-emoji">${unlocked ? q.emoji : '🔒'}</div>
           <div>
-            <div class="m-num">Mission ${m.num}</div>
-            <h3>${m.title}</h3>
-            <div class="m-stars">${starRow(m.id)}
+            <div class="m-num">Quest ${q.num}</div>
+            <h3>${q.title}</h3>
+            <div class="m-stars">${starRow(q.id)}
               ${showLvl ? `<span class="lvl">${st.emoji} ${st.label}</span>` : ''}</div>
           </div>
         </div>`;
@@ -207,7 +299,7 @@ function renderHome() {
 
 function renderMission(mid) {
   speechSynthesis.cancel();
-  const m = MISSIONS.find(x => x.id === mid);
+  const m = findQuest(mid);
   const p = prog(mid);
   const gamesLocked = !p.learn;
   app.innerHTML = html`
@@ -216,7 +308,7 @@ function renderMission(mid) {
       <button class="backbtn" onclick="renderHome()">←</button>
       <div>
         <h2>${m.emoji} ${m.title}</h2>
-        <div class="sub">Mission ${m.num} · ${m.phrases.length} phrases</div>
+        <div class="sub">Quest ${m.num} · ${m.phrases.length} phrases</div>
       </div>
     </div>
     <div class="intro-bubble">💡 ${m.intro}</div>
@@ -242,7 +334,7 @@ function renderMission(mid) {
 // ── LEARN: flip through phrase cards ─────────────────────
 let learnIdx = 0;
 function renderLearn(mid, idx = 0) {
-  const m = MISSIONS.find(x => x.id === mid);
+  const m = findQuest(mid);
   learnIdx = idx;
   const ph = m.phrases[idx];
   const thai = fillName(ph.thai);
@@ -265,8 +357,8 @@ function renderLearn(mid, idx = 0) {
         ${ph.tip ? `<div class="p-tip">💡 ${esc(ph.tip)}</div>` : ''}
       </div>
       <div class="soundrow">
-        <button class="soundbtn play" onclick="Audio_.pop(); Audio_.speak(${JSON.stringify(thai)})">🔊 Hear it</button>
-        <button class="soundbtn slow" onclick="Audio_.pop(); Audio_.speakSlow(${JSON.stringify(thai)})">🐢 Slow</button>
+        <button class="soundbtn play" onclick="Audio_.pop(); Audio_.speak(${esc(JSON.stringify(thai))})">🔊 Hear it</button>
+        <button class="soundbtn slow" onclick="Audio_.pop(); Audio_.speakSlow(${esc(JSON.stringify(thai))})">🐢 Slow</button>
       </div>
       <div class="navrow">
         <button class="navbtn" ${idx === 0 ? 'disabled' : ''} onclick="renderLearn('${mid}', ${idx - 1})">← Back</button>
@@ -286,11 +378,11 @@ function finishLearn(mid) {
   p.learn = true;
   if (first) addXP(20);
   bumpStreak();
-  checkMissionBadges(mid);
+  checkQuestBadges();
   save();
   confetti(50);
   Audio_.fanfare();
-  const m = MISSIONS.find(x => x.id === mid);
+  const m = findQuest(mid);
   app.innerHTML = html`
     ${header()}
     <div class="result-card">
@@ -324,7 +416,7 @@ function buildListenRounds(pool, n) {
 }
 
 function startListen(mid) {
-  const m = MISSIONS.find(x => x.id === mid);
+  const m = findQuest(mid);
   const pool = keyedPhrases(m).filter(p => !p.blank);
   listenGame.mid = mid;
   listenGame.power = false;
@@ -360,7 +452,7 @@ function listenOption(o, i, mode) {
 function renderListenRound() {
   const g = listenGame;
   if (g.idx >= g.rounds.length) return finishListen();
-  const m = g.power ? null : MISSIONS.find(x => x.id === g.mid);
+  const m = g.power ? null : findQuest(g.mid);
   const r = g.rounds[g.idx];
   g.answered = false;
   app.innerHTML = html`
@@ -377,7 +469,7 @@ function renderListenRound() {
       <div class="progress-track"><div class="progress-fill" style="width:${g.idx / g.rounds.length * 100}%"></div></div>
       <span class="score-pill">✅ ${g.score}</span>
     </div>
-    <button class="earbtn" onclick="Audio_.speak(${JSON.stringify(r.target.thai)})">👂</button>
+    <button class="earbtn" onclick="Audio_.speak(${esc(JSON.stringify(r.target.thai))})">👂</button>
     <div class="quiz-hint">
       <span class="diff-chip">${LISTEN_MODE_CHIP[r.mode]}</span><br>
       ${r.mode === 'hard' ? 'You know this one — now READ it: tap the Thai you heard!' : 'Tap the ear to hear it again — then tap what it means!'}
@@ -428,7 +520,7 @@ function finishListen() {
   if (gained) addXP(gained * 10);
   bumpStreak();
   if (stars === 3) earnBadge('golden-ear');
-  checkMissionBadges(g.mid);
+  checkQuestBadges();
   save();
   if (stars >= 2) { confetti(); Audio_.fanfare(); } else Audio_.ding();
   renderGameResult({
@@ -492,7 +584,7 @@ function renderGameResult({ stars, title, detail, xp, retry, next, nextLabel, mi
 const speakGame = { mid: null, rounds: [], idx: 0, passed: 0 };
 
 function startSpeak(mid) {
-  const m = MISSIONS.find(x => x.id === mid);
+  const m = findQuest(mid);
   speakGame.mid = mid;
   speakGame.rounds = Adapt.pickWeighted(keyedPhrases(m), Math.min(5, m.phrases.length));
   speakGame.idx = 0;
@@ -502,7 +594,7 @@ function startSpeak(mid) {
 
 function renderSpeakRound() {
   const g = speakGame;
-  const m = MISSIONS.find(x => x.id === g.mid);
+  const m = findQuest(g.mid);
   if (g.idx >= g.rounds.length) return finishSpeak();
   const ph = g.rounds[g.idx];
   const thai = fillName(ph.thai);
@@ -522,8 +614,8 @@ function renderSpeakRound() {
         <div class="p-roman">${esc(fillName(ph.roman))}</div>
         <div class="p-kana">${esc(fillName(ph.kana))}</div>
         <div class="soundrow" style="margin-top:.9rem">
-          <button class="soundbtn play" onclick="Audio_.speak(${JSON.stringify(thai)})">🔊 Hear it</button>
-          <button class="soundbtn slow" onclick="Audio_.speakSlow(${JSON.stringify(thai)})">🐢 Slow</button>
+          <button class="soundbtn play" onclick="Audio_.speak(${esc(JSON.stringify(thai))})">🔊 Hear it</button>
+          <button class="soundbtn slow" onclick="Audio_.speakSlow(${esc(JSON.stringify(thai))})">🐢 Slow</button>
         </div>
       </div>
       ${supported ? html`
@@ -572,9 +664,13 @@ async function doListen() {
     }
   } catch (e) {
     Audio_.boop();
-    out.innerHTML = e.message === 'not-allowed'
-      ? '<span class="verdict try">🎤 Please allow the microphone in your browser!</span>'
-      : '<span class="verdict try">🤫 I didn\'t hear anything — try again!</span>';
+    const msg = {
+      'not-allowed': '🎤 Please allow the microphone in your browser!',
+      'service-not-allowed': '🎤 Please allow the microphone in your browser!',
+      'audio-capture': '🎤 No microphone found — check it\'s plugged in!',
+      'network': '🌐 The Thai mic game needs the internet — check your connection!',
+    }[e.message] || '🤫 I didn\'t hear anything — try again!';
+    out.innerHTML = `<span class="verdict try">${msg}</span>`;
   }
   btn.classList.remove('listening');
   btn.disabled = false;
@@ -605,26 +701,29 @@ function finishSpeak() {
   if (gained) addXP(gained * 15);
   bumpStreak();
   if (stars === 3) earnBadge('brave-voice');
-  checkMissionBadges(g.mid);
+  checkQuestBadges();
   save();
   if (stars >= 2) { confetti(); Audio_.tada(); } else Audio_.ding();
 
-  const mi = MISSIONS.findIndex(x => x.id === g.mid);
-  const nextM = MISSIONS[mi + 1];
+  const qs = quests();
+  const qi = qs.findIndex(x => x.id === g.mid);
+  const nextQ = qs[qi + 1];
+  const call = cur().call;
   renderGameResult({
     stars,
     title: stars === 3 ? 'SUPERSTAR VOICE!' : stars === 2 ? 'Brave speaking!' : stars === 1 ? 'Good effort!' : 'Warm-up round!',
     detail: `You nailed ${g.passed} of ${g.rounds.length} phrases out loud.`,
     xp: gained * 15,
     retry: `startSpeak('${g.mid}')`,
-    next: nextM ? `renderMission('${nextM.id}')` : `renderTalk()`,
-    nextLabel: nextM ? `${nextM.emoji} Next Mission →` : '📞 Call Yaa! →',
+    next: nextQ ? `renderMission('${nextQ.id}')` : `renderTalk()`,
+    nextLabel: nextQ ? `${nextQ.emoji} Next Quest →` : `${call && call.homeEmoji || '📞'} ${call && call.label || 'Video Call'} →`,
     mid: g.mid,
   });
 }
 
-// ── TALK: video call with Yaa ───────────────────────────
+// ── TALK: video-call roleplay (persona + script from cur().call) ──
 const chat = { step: 0, log: [] };
+function callCfg() { return cur().call; }
 
 function renderTalk() {
   speechSynthesis.cancel();
@@ -635,25 +734,26 @@ function renderTalk() {
 }
 
 function drawChat() {
-  const step = YAA_CHAT[chat.step];
-  const done = chat.step >= YAA_CHAT.length;
+  const call = callCfg();
+  const step = call.steps[chat.step];
+  const done = chat.step >= call.steps.length;
   app.innerHTML = html`
     ${header()}
     <div class="screen-head">
       <button class="backbtn" onclick="renderHome()">←</button>
-      <div><h2>📞 Video Call</h2><div class="sub">Talking with Yaa (Grandma)</div></div>
+      <div><h2>📞 Video Call</h2><div class="sub">Talking with ${esc(call.personaName)} (${call.personaName === 'Yaa' ? 'Grandma' : esc(call.personaName)})</div></div>
     </div>
     <div class="call-frame">
       <div class="call-head">
-        <div class="avatar">👵</div>
-        <div><b>Yaa ย่า</b><span style="font-size:.8rem">Bangkok, Thailand 🇹🇭</span></div>
+        <div class="avatar">${call.personaEmoji}</div>
+        <div><b>${esc(call.personaName)} ${call.personaThai || ''}</b><span style="font-size:.8rem">${call.personaPlace || ''}</span></div>
         <span class="live" style="margin-left:auto">● LIVE</span>
       </div>
       <div class="chat-log" id="chat-log">
         ${chat.log.map(b => html`
           <div class="bubble ${b.who}">
             <div class="b-thai">${esc(b.thai)}
-              <button class="b-speak" onclick="Audio_.speak(${JSON.stringify(b.thai)})">🔊</button>
+              <button class="b-speak" onclick="Audio_.speak(${esc(JSON.stringify(b.thai))})">🔊</button>
             </div>
             <div class="b-roman">${esc(b.roman)}</div>
             <div class="b-en">${esc(b.en)}</div>
@@ -669,7 +769,7 @@ function drawChat() {
                 <span style="font-size:1.05rem">${esc(r.thai)}</span>
                 <small>${esc(r.roman)} — ${esc(r.en)}</small>
               </span>
-              <span class="c-hear" onclick="event.stopPropagation(); Audio_.speak(${JSON.stringify(r.thai)})">🔊</span>
+              <span class="c-hear" onclick="event.stopPropagation(); Audio_.speak(${esc(JSON.stringify(r.thai))})">🔊</span>
             </button>`).join('')}
         </div>` : ''}
     </div>
@@ -679,7 +779,7 @@ function drawChat() {
 }
 
 function yaaSpeaks() {
-  const step = YAA_CHAT[chat.step];
+  const step = callCfg().steps[chat.step];
   if (!step) return finishChat();
   chat.log.push({ who: 'yaa', ...step.yaa });
   drawChat();
@@ -687,7 +787,7 @@ function yaaSpeaks() {
 }
 
 function kidSays(i) {
-  const step = YAA_CHAT[chat.step];
+  const step = callCfg().steps[chat.step];
   const r = step.replies[i];
   chat.log.push({ who: 'kid', thai: r.thai, roman: r.roman, en: r.en });
   drawChat();
@@ -701,20 +801,20 @@ function kidSays(i) {
 }
 
 function finishChat() {
-  const first = !state.chatDone;
-  state.chatDone = true;
+  const first = !state.callDone[state.activeMission];
+  state.callDone[state.activeMission] = true;
   if (first) addXP(50);
   bumpStreak();
-  earnBadge('chatterbox');
+  checkQuestBadges();   // awards the call badge (when.call) for this mission
   save();
   confetti(90);
   Audio_.tada();
   app.innerHTML = html`
     ${header()}
     <div class="result-card">
-      <div class="r-stars"><span class="lit">💬</span><span class="lit">👵</span><span class="lit">❤️</span></div>
-      <h2>You talked with Yaa!</h2>
-      <p>A whole conversation in Thai — the real one in Bangkok is going to be amazing.<br>
+      <div class="r-stars"><span class="lit">💬</span><span class="lit">${callCfg().personaEmoji}</span><span class="lit">❤️</span></div>
+      <h2>You talked with ${esc(callCfg().personaName)}!</h2>
+      <p>A whole conversation in Thai — the real one is going to be amazing.<br>
          Try it again and pick different answers!</p>
       ${first ? '<div class="xp-burst">+50 XP ⚡</div>' : ''}
       <div class="navrow">
@@ -731,10 +831,10 @@ function renderBadges() {
     ${header()}
     <div class="screen-head">
       <button class="backbtn" onclick="renderHome()">←</button>
-      <div><h2>🎖️ Badge Collection</h2><div class="sub">${state.badges.length} of ${BADGES.length} collected</div></div>
+      <div><h2>🎖️ Badge Collection</h2><div class="sub">${state.badges.length} of ${allBadges().length} collected</div></div>
     </div>
     <div class="badge-grid">
-      ${BADGES.map(b => html`
+      ${allBadges().map(b => html`
         <div class="badge-card ${state.badges.includes(b.id) ? 'earned' : 'locked'}">
           <div class="bg-emoji">${b.emoji}</div>
           <b>${b.name}</b>
@@ -744,20 +844,43 @@ function renderBadges() {
   `;
 }
 
-// ── settings ─────────────────────────────────────────────
+// ── avatar picker (shared by create + settings) ──────────
+let chosenAvatar = AVATARS[0];
+function avatarGrid(sel) {
+  chosenAvatar = sel;
+  return '<div class="avatar-grid">' + AVATARS.map(a =>
+    `<button type="button" class="av-opt ${a === sel ? 'sel' : ''}" onclick="chooseAvatar(this,'${a}')">${a}</button>`
+  ).join('') + '</div>';
+}
+function chooseAvatar(btn, emoji) {
+  chosenAvatar = emoji;
+  btn.parentElement.querySelectorAll('.av-opt').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  Audio_.pop();
+}
+
+// ── settings (per profile) ───────────────────────────────
+function closeModal() { document.querySelector('.modal-wrap')?.remove(); }
+
 function openSettings() {
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
   wrap.innerHTML = html`
     <div class="modal">
-      <h3>⚙️ Settings</h3>
-      <label>Your name (shows in phrases)</label>
+      <h3>⚙️ ${state.avatar} ${esc(state.name)}</h3>
+      <label>Name (shows in phrases)</label>
       <input id="set-name" value="${esc(state.name)}" maxlength="20">
+      <label>Pick a face</label>
+      ${avatarGrid(state.avatar)}
       <label>Bangkok trip date 🛫</label>
       <input id="set-date" type="date" value="${state.tripDate || ''}">
       <div class="mrow">
-        <button class="navbtn danger" onclick="resetAll()">🗑 Reset</button>
+        <button class="navbtn" onclick="exportProfile()">⬇️ Export</button>
         <button class="navbtn primary" onclick="saveSettings()">💾 Save</button>
+      </div>
+      <div class="mrow">
+        <button class="navbtn" onclick="closeModal(); renderPicker()">🔄 Switch player</button>
+        <button class="navbtn danger" onclick="deleteProfile('${state.id}')">🗑 Delete</button>
       </div>
     </div>
   `;
@@ -766,53 +889,185 @@ function openSettings() {
 }
 
 function saveSettings() {
-  state.name = document.getElementById('set-name').value.trim();
+  const nm = document.getElementById('set-name').value.trim();
+  if (nm) state.name = nm;
+  state.avatar = chosenAvatar;
   state.tripDate = document.getElementById('set-date').value || state.tripDate;
   save();
-  document.querySelector('.modal-wrap')?.remove();
+  closeModal();
   renderHome();
 }
 
-function resetAll() {
-  if (!confirm('Erase ALL progress and start over?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  Adapt.resetAll();
-  location.reload();
-}
-
-// ── onboarding ───────────────────────────────────────────
-function renderWelcome() {
+// ── profile picker / create / switch ─────────────────────
+function renderPicker() {
+  speechSynthesis.cancel();
   app.innerHTML = html`
-    <div class="welcome">
-      <div class="hero">🛺</div>
-      <h1>MISSION:<br><em>BANGKOK</em></h1>
-      <p>In one month you fly to Thailand… and your whole Thai family is waiting.
-         Your mission: learn to <b>talk to them in Thai</b> and blow their minds! 🤯</p>
-      <p><b>What's your name, agent?</b></p>
-      <input id="welcome-name" placeholder="Type your name…" maxlength="20" autofocus>
-      <button class="gobtn" onclick="startMission()">🚀 START MISSION</button>
+    <div class="picker">
+      <h1 class="picker-title">Who's playing? 🛺</h1>
+      <div class="profile-grid">
+        ${store.profiles.map(p => html`
+          <div class="profile-tile" onclick="selectProfile('${p.id}')">
+            <div class="pt-avatar">${p.avatar}</div>
+            <b>${esc(p.name)}</b>
+            <small>⚡ ${p.xp} XP</small>
+          </div>`).join('')}
+        <div class="profile-tile add" onclick="renderCreateProfile(false)">
+          <div class="pt-avatar">➕</div>
+          <b>Add player</b>
+        </div>
+      </div>
+      <div class="navrow" style="justify-content:center">
+        <button class="navbtn" onclick="triggerImport()">📥 Import a player</button>
+      </div>
     </div>
   `;
-  document.getElementById('welcome-name').addEventListener('keydown', e => {
-    if (e.key === 'Enter') startMission();
-  });
 }
 
-function startMission() {
-  const name = document.getElementById('welcome-name').value.trim();
-  if (!name) { Audio_.boop(); document.getElementById('welcome-name').focus(); return; }
-  state.name = name;
-  if (!state.tripDate) {
-    const d = new Date(); d.setDate(d.getDate() + 30);
-    state.tripDate = d.toISOString().slice(0, 10);
-  }
+function renderCreateProfile(firstRun) {
+  speechSynthesis.cancel();
+  const startAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+  app.innerHTML = html`
+    <div class="welcome">
+      ${firstRun ? '<div class="hero">🛺</div><h1>MISSION:<br><em>BANGKOK</em></h1>' : '<h1 style="margin-top:1.2rem">New Player</h1>'}
+      ${firstRun ? '<p>Learn to <b>talk to your Thai family</b> in Thai and blow their minds! 🤯</p>' : ''}
+      <p><b>Pick your secret-agent face:</b></p>
+      ${avatarGrid(startAvatar)}
+      <p><b>What's your name, agent?</b></p>
+      <input id="cp-name" placeholder="Type your name…" maxlength="20" autofocus>
+      <div class="navrow" style="justify-content:center">
+        ${firstRun ? '' : '<button class="navbtn" onclick="renderPicker()">← Back</button>'}
+        <button class="gobtn" onclick="createProfile()">🚀 ${firstRun ? 'START MISSION' : 'Create'}</button>
+      </div>
+    </div>
+  `;
+  const inp = document.getElementById('cp-name');
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') createProfile(); });
+}
+
+function createProfile() {
+  const name = document.getElementById('cp-name').value.trim();
+  if (!name) { Audio_.boop(); document.getElementById('cp-name').focus(); return; }
+  const p = makeProfile(name, chosenAvatar);
+  store.profiles.push(p);
+  store.activeId = p.id;
+  state = p;
   bumpStreak();
   save();
   confetti(60);
   Audio_.fanfare();
+  renderMissionSelect();
+}
+
+function selectProfile(id) {
+  store.activeId = id;
+  state = activeProfile();
+  if (!state) return renderPicker();
+  bumpStreak();
+  save();
+  Audio_.ding();
+  renderMissionSelect();
+}
+
+function deleteProfile(id) {
+  const p = store.profiles.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Delete ${p.name}'s progress forever? This can't be undone.`)) return;
+  store.profiles = store.profiles.filter(x => x.id !== id);
+  if (store.activeId === id) { store.activeId = null; state = null; }
+  persist();
+  closeModal();
+  if (store.profiles.length) renderPicker(); else renderCreateProfile(true);
+}
+
+// ── mission select (choose a course) ─────────────────────
+function renderMissionSelect() {
+  speechSynthesis.cancel();
+  app.innerHTML = html`
+    ${header()}
+    <div class="screen-head">
+      <button class="backbtn" onclick="renderPicker()">←</button>
+      <div><h2>Choose your mission</h2><div class="sub">Tap a mission to start!</div></div>
+    </div>
+    <div class="path">
+      ${MISSIONS.map(m => {
+        const mp = state.progress[m.id] || {};
+        const started = m.quests.filter(q => (mp[q.id] || {}).learn).length;
+        return html`
+        <div class="mission-card c-${m.color}" onclick="selectMission('${m.id}')">
+          <div class="m-emoji">${m.emoji}</div>
+          <div>
+            <h3>${m.title}</h3>
+            <div class="m-blurb">${m.blurb}</div>
+            <div class="m-stars">${started}/${m.quests.length} quests started</div>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="mission-card locked c-gold">
+        <div class="m-emoji">🔒</div>
+        <div><h3>More coming soon</h3><div class="m-blurb">Tokyo? Chiang Mai? Stay tuned!</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function selectMission(id) {
+  state.activeMission = id;
+  save();
+  Audio_.pop();
   renderHome();
+}
+
+// ── export / import a profile (move between devices) ──────
+function exportProfile(id) {
+  const p = id ? store.profiles.find(x => x.id === id) : state;
+  if (!p) return;
+  const data = { app: 'mission-bangkok', kind: 'profile', version: 1, profile: p };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mission-bangkok-${(p.name || 'player').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function triggerImport() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'application/json,.json';
+  inp.onchange = () => { if (inp.files && inp.files[0]) readImport(inp.files[0]); };
+  inp.click();
+}
+
+function readImport(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); } catch { alert('That file is not a valid player file.'); return; }
+    const incoming = data && data.profile ? data.profile : data;
+    if (!incoming || !incoming.name) { alert('That file is not a Mission: Bangkok player.'); return; }
+    const p = normalizeProfile(incoming);
+    const existing = store.profiles.find(x => x.id === p.id);
+    if (existing) {
+      if (!confirm(`Update existing player "${existing.name}" with this file?`)) return;
+      Object.assign(existing, p);
+      store.activeId = existing.id;
+    } else {
+      store.profiles.push(p);
+      store.activeId = p.id;
+    }
+    state = activeProfile();
+    persist();
+    Audio_.fanfare();
+    renderMissionSelect();
+  };
+  reader.readAsText(file);
 }
 
 // ── boot ─────────────────────────────────────────────────
 Audio_.init();
-if (state.name) renderHome(); else renderWelcome();
+if (!store.profiles.length) renderCreateProfile(true);
+else if (!state) renderPicker();
+else { bumpStreak(); renderHome(); }

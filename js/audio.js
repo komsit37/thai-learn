@@ -50,13 +50,22 @@ const Audio_ = {
       rec.maxAlternatives = 3;
       let settled = false;
       rec.onresult = e => {
+        if (settled) return;
         settled = true;
-        const alts = [...e.results[0]].map(r => r.transcript);
+        // SpeechRecognitionResult is array-like but NOT iterable in Chrome,
+        // so spreading it ([...]) throws — read alternatives by index instead.
+        const result = e.results[0];
+        const alts = [];
+        for (let i = 0; i < result.length; i++) alts.push(result[i].transcript);
         resolve({ alternatives: alts });
       };
       rec.onerror = e => { if (!settled) { settled = true; reject(new Error(e.error)); } };
       rec.onend = () => { if (!settled) { settled = true; reject(new Error('no-speech')); } };
-      rec.start();
+      try {
+        rec.start();
+      } catch (err) {
+        if (!settled) { settled = true; reject(err); }
+      }
     });
   },
 

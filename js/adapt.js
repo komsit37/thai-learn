@@ -4,18 +4,15 @@
 // ─────────────────────────────────────────────────────────────
 
 const Adapt = {
-  KEY: 'mission-bangkok-adapt-v1',
   _state: null,
 
-  // Load store from localStorage into internal state (lazy)
+  // The spaced-repetition store lives INSIDE the active profile
+  // (state.adapt), so it's per-kid and travels with export/import.
+  // Rebind every call so switching profiles picks up the right store.
   load() {
-    if (this._state !== null) return;
-    try {
-      const data = localStorage.getItem(this.KEY);
-      this._state = data ? JSON.parse(data) : {};
-    } catch (e) {
-      this._state = {};
-    }
+    if (typeof state === 'undefined' || !state) { this._state = {}; return; }
+    if (!state.adapt) state.adapt = {};
+    this._state = state.adapt;
   },
 
   // Internal: get today's date as YYYY-MM-DD
@@ -68,7 +65,7 @@ const Adapt = {
     rec.due = this._addDays(this._today(), INTERVALS[rec.box]);
 
     this._state[key] = rec;
-    localStorage.setItem(this.KEY, JSON.stringify(this._state));
+    save();   // persists the active profile (incl. its adapt store)
   },
 
   strength(key) {
@@ -121,10 +118,11 @@ const Adapt = {
     return result;
   },
 
-  missionStats(mid, phraseCount) {
+  // keyPrefix is "missionId:questId"; phraseCount is the quest's phrase count
+  missionStats(keyPrefix, phraseCount) {
     let totalBox = 0;
     for (let i = 0; i < phraseCount; i++) {
-      totalBox += this.strength(`${mid}:${i}`);
+      totalBox += this.strength(`${keyPrefix}:${i}`);
     }
     const avgBox = totalBox / phraseCount;
 
@@ -152,7 +150,8 @@ const Adapt = {
   },
 
   resetAll() {
+    if (typeof state !== 'undefined' && state) state.adapt = {};
     this._state = {};
-    localStorage.removeItem(this.KEY);
+    save();
   },
 };

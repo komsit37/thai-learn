@@ -14,12 +14,32 @@ Open **http://localhost:8000** in **Google Chrome** (important — Chrome has th
 text-to-speech voice and the Thai speech recognition that powers the mic game).
 Works great on a laptop or iPad (use Chrome there too).
 
+It's a plain static site, so you can also drop it on **GitHub Pages** (or any static
+host) and open it from anywhere — no server or build step.
+
+## Structure: Missions → Quests
+
+The app is a multi-**Mission** platform. **Mission: Bangkok** is the first course;
+adding another (Tokyo, Chiang Mai…) is just one object appended to `MISSIONS` in
+`js/data.js`. Each Mission contains **Quests** (the topics), and each Quest has three
+steps: **Learn → Listen → Speak**. A Mission also carries its own video-call finale
+and badges. Kids pick a Mission from the "Choose your mission" screen.
+
+## Profiles (multiple kids)
+
+- A **"Who's playing?"** screen lets each kid pick an avatar + name — like Netflix
+  kid profiles, no passwords. Tap the name chip in the header to switch players.
+- Each profile keeps its **own** progress, stars, streak, badges, and spaced-repetition
+  memory. Saved in the browser (localStorage).
+- **Export / Import**: a profile can be exported to a small `.json` file (⚙️ Settings →
+  Export) and imported on another device — the simple way to move a kid laptop ↔ iPad.
+
 ## What's inside
 
-- **7 missions** on a "road to Bangkok" map — greetings & the wai, family words
+- **8 quests** on a "road to Bangkok" map — greetings & the wai, family words
   (yaai/taa/pùu/yâa…), all-about-me, food, magic polite words, numbers & market
-  haggling, and superstar compliment phrases. ~55 phrases total, all chosen for
-  real conversations with Thai relatives.
+  haggling, superstar compliments, and playing with cousins. ~65 phrases total, all
+  chosen for real conversations with Thai relatives.
 - **Triple phonetics on every card**: Thai script (he can start reading it),
   romanization with tone accents, and **katakana hints** — since he reads Japanese
   fluently, サワッディー クラップ clicks faster than "sawatdee krap".
@@ -52,10 +72,12 @@ Works great on a laptop or iPad (use Chrome there too).
   trip date for the countdown.
 - Phrases use boy-speech (ผม / ครับ). For a girl, the data in `js/data.js` would
   need ฉัน/หนู + ค่ะ.
-- Progress lives in the browser (localStorage) — same browser + device keeps the streak.
+- Progress lives in the browser (localStorage), per profile. It stays on that browser +
+  device; use ⚙️ → **Export** and **Import a player** (on the picker) to move a kid to
+  another device. Each kid gets their own avatar, stars, streak, and review schedule.
 - The mic game needs mic permission on first use; if the browser has no speech
   recognition it falls back to honor-system practice ("I said it!").
-- A great routine for the month: one mission's *Learn* per weekend, games on
+- A great routine for the month: one quest's *Learn* per weekend, games on
   weekdays (10 min), and **Call Yaa** together every few days — then try a real
   video call with the family.
 

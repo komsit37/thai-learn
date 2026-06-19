@@ -472,8 +472,56 @@ body.no-thai-voice .voice-warn {
   to { transform: translateY(108vh) rotate(720deg); opacity: .6; }
 }
 
+/* ── profile chip in the header ──────────────────────────── */
+.chip.who {
+  cursor: pointer; background: var(--gold-soft); font-weight: 700;
+  max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip.who:hover { transform: translateY(-2px); }
+
+/* ── "Who's playing?" profile picker ─────────────────────── */
+.picker { text-align: center; margin-top: 6vh; display: flex; flex-direction: column; align-items: center; gap: 1.4rem; }
+.picker-title { font-size: clamp(1.7rem, 6vw, 2.6rem); }
+.profile-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 1rem; width: min(34rem, 92vw);
+}
+.profile-tile {
+  background: var(--paper); border: 3px solid var(--ink); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); padding: 1.1rem .6rem; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: .25rem;
+  transition: transform .15s, box-shadow .15s;
+}
+.profile-tile:hover { transform: translateY(-4px) rotate(-1deg); box-shadow: var(--shadow); }
+.profile-tile .pt-avatar {
+  font-size: 2.8rem; width: 4.4rem; height: 4.4rem; display: grid; place-items: center;
+  background: var(--pink-soft); border: 3px solid var(--ink); border-radius: 50%;
+}
+.profile-tile b { font-size: 1.05rem; }
+.profile-tile small { opacity: .65; font-weight: 600; }
+.profile-tile.add { border-style: dashed; background: transparent; }
+.profile-tile.add .pt-avatar { background: var(--gold-soft); }
+
+/* ── avatar chooser (create + settings) ──────────────────── */
+.avatar-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: .4rem;
+  width: min(22rem, 84vw); margin: 0 auto;
+}
+.av-opt {
+  font-size: 1.5rem; aspect-ratio: 1; display: grid; place-items: center;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 14px;
+  cursor: pointer; transition: transform .1s;
+}
+.av-opt:hover { transform: translateY(-2px); }
+.av-opt.sel { background: var(--gold); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.modal .avatar-grid { grid-template-columns: repeat(6, 1fr); }
+
+/* mission blurb on the mission-select cards */
+.mission-card .m-blurb { font-size: .85rem; font-weight: 500; opacity: .75; margin-top: .1rem; }
+
 @media (max-width: 540px) {
   .mission-card { width: 100%; }
   .bigbtn-row { grid-template-columns: 1fr; }
   .options { grid-template-columns: 1fr 1fr; }
+  .avatar-grid { grid-template-columns: repeat(6, 1fr); }
 }
