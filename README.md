@@ -19,11 +19,18 @@ host) and open it from anywhere — no server or build step.
 
 ## Structure: Missions → Quests
 
-The app is a multi-**Mission** platform. **Mission: Bangkok** is the first course;
-adding another (Tokyo, Chiang Mai…) is just one object appended to `MISSIONS` in
-`js/data.js`. Each Mission contains **Quests** (the topics), and each Quest has three
-steps: **Learn → Listen → Speak**. A Mission also carries its own video-call finale
-and badges. Kids pick a Mission from the "Choose your mission" screen.
+The app is a multi-**Mission** platform. Adding another (Tokyo, Chiang Mai…) is just
+one object appended to `MISSIONS` in `js/data.js`. Each Mission contains **Quests**
+(the topics), and each Quest has three steps: **Learn → Listen → Speak**. A Mission
+also carries its own video-call finale and badges. Kids pick a Mission from the
+"Choose your mission" screen. Two missions ship today:
+
+- **Mission: Bangkok** 🛺 — talk to the Thai family on the next trip. 8 quests +
+  a video call with Grandma (Yaa).
+- **Mission: Summer Camp** 🏕️ — **how to make friends in Thai** at Regent's Summer
+  Camp. 6 quests (Make a New Friend · At Camp · Let's Play! · How I Feel · Be a Good
+  Friend · See You Tomorrow!) + a roleplay where he meets a new camp friend, Ploy.
+  All boy-speech (ผม/ครับ); the finale persona is a peer, not a grown-up.
 
 ## Profiles (multiple kids)
 

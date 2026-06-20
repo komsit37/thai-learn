@@ -189,6 +189,7 @@ const MISSIONS = [
       homeEmoji: '📞👵',
       personaName: 'Yaa',
       personaThai: 'ย่า',
+      personaRole: 'Grandma',
       personaEmoji: '👵',
       personaPlace: 'Bangkok, Thailand 🇹🇭',
       // Each step: persona says a line, kid picks one of the replies.
@@ -255,6 +256,207 @@ const MISSIONS = [
       { id: 'cousin-buddy',emoji: '🤝', name: 'Cousin Buddy',   desc: 'Finished Playing with Cousins',    when: { quest: 'play', need: 'complete' } },
       { id: 'chatterbox',  emoji: '💬', name: 'Chatterbox',     desc: 'Finished a whole call with Yaa',   when: { call: true } },
       { id: 'legend',      emoji: '🏆', name: 'Bangkok Legend', desc: 'Finished every single quest',      when: { allQuests: 'learn' } },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // Mission: Summer Camp — make friends at Regent's Summer Camp.
+  // Same Learn·Listen·Speak engine; finale is meeting a new
+  // camp friend (Ploy) instead of calling Grandma.
+  // ═══════════════════════════════════════════════════════════
+  {
+    id: 'camp',
+    title: 'Mission: Summer Camp',
+    emoji: '🏕️',
+    color: 'teal',
+    blurb: 'Make brand-new friends at summer camp — all in Thai!',
+    quests: [
+      {
+        id: 'friend',
+        num: 1,
+        title: 'Make a New Friend',
+        emoji: '🤝',
+        color: 'pink',
+        intro: 'The #1 camp superpower: turning a stranger into a friend. Walk up, smile big, and use these magic words.',
+        phrases: [
+          { thai: 'มาเป็นเพื่อนกันไหม', roman: 'maa pen phûean kan mǎi', kana: 'マー ペン プアン ガン マイ', en: 'Want to be friends?', jp: 'おともだちになろう？', emoji: '🤝',
+            tip: 'THE friend-making sentence. Smile, say it, and you have a new buddy! 🎉' },
+          { thai: 'เธอชื่ออะไร', roman: 'thoe chûe à-rai', kana: 'トゥー チュー アライ', en: "What's your name?", jp: 'なまえは？', emoji: '🙋' },
+          { thai: 'ผมชื่อ___ครับ', roman: 'phǒm chûe ___ khráp', kana: 'ポム チュー ___ クラップ', en: 'My name is ___', jp: 'ぼくの名前は___です', emoji: '📛', blank: true },
+          { thai: 'ขอเล่นด้วยได้ไหมครับ', roman: 'khǎw lên dûai dâai mǎi khráp', kana: 'コー レン ドゥアイ ダーイ マイ クラップ', en: 'Can I play with you?', jp: 'いっしょにあそんでいい？', emoji: '🤸',
+            tip: 'Walk up to any kid, say this, and you are IN the game!' },
+          { thai: 'นั่งด้วยได้ไหมครับ', roman: 'nâng dûai dâai mǎi khráp', kana: 'ナン ドゥアイ ダーイ マイ クラップ', en: 'Can I sit here?', jp: 'となりにすわっていい？', emoji: '🪑',
+            tip: 'Perfect for the lunch table — sit with someone new!' },
+          { thai: 'ยินดีที่ได้รู้จักครับ', roman: 'yin-dii thîi dâai rúu-jàk khráp', kana: 'インディー ティー ダーイ ルージャック クラップ', en: 'Nice to meet you!', jp: 'はじめまして', emoji: '😊' },
+          { thai: 'เธอใจดีจัง', roman: 'thoe jai-dii jang', kana: 'トゥー ジャイ ディー ジャン', en: "You're so kind!", jp: 'やさしいね', emoji: '💛',
+            tip: 'Say this and you have a friend for life.' },
+        ],
+      },
+      {
+        id: 'campday',
+        num: 2,
+        title: 'At Camp',
+        emoji: '🎒',
+        color: 'orange',
+        intro: 'Camp happens in Thai AND English. When you get stuck, these phrases are your secret weapon — brave kids ask for help!',
+        phrases: [
+          { thai: 'คุณครูครับ', roman: 'khun-khruu khráp', kana: 'クン クルー クラップ', en: 'Teacher! (excuse me)', jp: 'せんせい', emoji: '🧑‍🏫' },
+          { thai: 'ผมไม่เข้าใจครับ', roman: 'phǒm mâi khâo-jai khráp', kana: 'ポム マイ カオ ジャイ クラップ', en: "I don't understand", jp: 'わからないです', emoji: '😕',
+            tip: 'Brave kids say this — it is how you learn the fastest!' },
+          { thai: 'พูดอีกทีได้ไหมครับ', roman: 'phûut ìik thii dâai mǎi khráp', kana: 'プート イーク ティー ダーイ マイ クラップ', en: 'Can you say it again?', jp: 'もういちど言って？', emoji: '🔁' },
+          { thai: 'ช่วยผมหน่อยได้ไหมครับ', roman: 'chûai phǒm nòi dâai mǎi khráp', kana: 'チュアイ ポム ノイ ダーイ マイ クラップ', en: 'Can you help me?', jp: 'てつだってくれる？', emoji: '🙏' },
+          { thai: 'ขอไปห้องน้ำได้ไหมครับ', roman: 'khǎw pai hông-náam dâai mǎi khráp', kana: 'コー パイ ホン ナーム ダーイ マイ クラップ', en: 'May I go to the bathroom?', jp: 'トイレに行ってもいい？', emoji: '🚻',
+            tip: 'The most important sentence in ANY school!' },
+          { thai: 'เสร็จแล้วครับ', roman: 'sèt láew khráp', kana: 'セット レーオ クラップ', en: "I'm done!", jp: 'できた！', emoji: '✅' },
+          { thai: 'นี่อะไรครับ', roman: 'nîi à-rai khráp', kana: 'ニー アライ クラップ', en: "What's this?", jp: 'これなに？', emoji: '❓' },
+        ],
+      },
+      {
+        id: 'play',
+        num: 3,
+        title: "Let's Play!",
+        emoji: '🏊',
+        color: 'green',
+        intro: 'Swimming, art, music, cooking, Thai dance — every camp day is an adventure. Pick what to do with your new friends!',
+        phrases: [
+          { thai: 'เล่นอะไรกันดี', roman: 'lên à-rai kan dii', kana: 'レン アライ ガン ディー', en: 'What should we play?', jp: 'なにしてあそぶ？', emoji: '🤔' },
+          { thai: 'ว่ายน้ำกันไหม', roman: 'wâai-náam kan mǎi', kana: 'ワーイ ナーム ガン マイ', en: "Let's go swimming!", jp: 'すいえいしよう？', emoji: '🏊' },
+          { thai: 'เล่นน้ำกันไหม', roman: 'lên náam kan mǎi', kana: 'レン ナーム ガン マイ', en: 'Wanna play in the water?', jp: 'みずあそびしよう？', emoji: '💦',
+            tip: 'Camp has a water slide and bubble show — you will use this a lot!' },
+          { thai: 'วาดรูปกันไหม', roman: 'wâat rûup kan mǎi', kana: 'ワート ループ ガン マイ', en: "Let's draw!", jp: 'おえかきしよう？', emoji: '🎨' },
+          { thai: 'ทำขนมกันไหม', roman: 'tham khà-nǒm kan mǎi', kana: 'タム カノム ガン マイ', en: "Let's make snacks!", jp: 'おかしつくろう？', emoji: '🧁' },
+          { thai: 'เต้นกันไหม', roman: 'tên kan mǎi', kana: 'テン ガン マイ', en: "Let's dance!", jp: 'おどろう？', emoji: '💃',
+            tip: 'Camp has Thai dancing — show them your moves!' },
+          { thai: 'ผมชอบ___ครับ', roman: 'phǒm châwp ___ khráp', kana: 'ポム チョープ ___ クラップ', en: 'I like ___!', jp: '___がすきです', emoji: '💖', blank: true },
+        ],
+      },
+      {
+        id: 'feelings',
+        num: 4,
+        title: 'How I Feel',
+        emoji: '😊',
+        color: 'purple',
+        intro: 'Far from home, big feelings happen. Tell a teacher or friend exactly what you need — they want to help you!',
+        phrases: [
+          { thai: 'ผมเหนื่อยครับ', roman: 'phǒm nùeai khráp', kana: 'ポム ヌアイ クラップ', en: "I'm tired", jp: 'つかれた', emoji: '😮‍💨' },
+          { thai: 'ผมร้อนครับ', roman: 'phǒm ráwn khráp', kana: 'ポム ローン クラップ', en: "I'm hot", jp: 'あつい', emoji: '🥵' },
+          { thai: 'ผมง่วงนอนครับ', roman: 'phǒm ngûang-nawn khráp', kana: 'ポム グアン ノーン クラップ', en: "I'm sleepy", jp: 'ねむい', emoji: '😴' },
+          { thai: 'ผมเจ็บครับ', roman: 'phǒm jèp khráp', kana: 'ポム ジェップ クラップ', en: 'It hurts! / I got hurt', jp: 'いたい', emoji: '🤕',
+            tip: 'Say this and point — a teacher will help right away.' },
+          { thai: 'ผมหิวครับ', roman: 'phǒm hǐw khráp', kana: 'ポム ヒウ クラップ', en: "I'm hungry", jp: 'おなかすいた', emoji: '🍽️' },
+          { thai: 'ขอน้ำหน่อยครับ', roman: 'khǎw náam nòi khráp', kana: 'コー ナーム ノイ クラップ', en: 'Water, please', jp: 'おみずください', emoji: '💧' },
+          { thai: 'ผมโอเคครับ', roman: 'phǒm oo-khee khráp', kana: 'ポム オー ケー クラップ', en: "I'm okay!", jp: 'だいじょうぶ', emoji: '👍' },
+        ],
+      },
+      {
+        id: 'kind',
+        num: 5,
+        title: 'Be a Good Friend',
+        emoji: '🌟',
+        color: 'gold',
+        intro: 'The best friends are KIND friends. These words make everyone at camp want to play with you.',
+        phrases: [
+          { thai: 'เธอโอเคไหม', roman: 'thoe oo-khee mǎi', kana: 'トゥー オー ケー マイ', en: 'Are you okay?', jp: 'だいじょうぶ？', emoji: '🤗',
+            tip: 'When a friend falls, ask this first — that is a TRUE friend.' },
+          { thai: 'แบ่งกันนะ', roman: 'bàeng kan ná', kana: 'ベン ガン ナ', en: "Let's share!", jp: 'わけっこしよう', emoji: '🤲' },
+          { thai: 'ตาเธอ', roman: 'taa thoe', kana: 'ター トゥー', en: 'Your turn!', jp: 'きみのばん！', emoji: '👉' },
+          { thai: 'เก่งมาก', roman: 'kèng mâak', kana: 'ゲン マーク', en: 'Great job!', jp: 'じょうず！', emoji: '🏆' },
+          { thai: 'ไม่เป็นไรครับ', roman: 'mâi pen rai khráp', kana: 'マイ ペン ライ クラップ', en: "It's okay! No worries!", jp: 'だいじょうぶだよ', emoji: '😌' },
+          { thai: 'ใจเย็นๆ', roman: 'jai-yen yen', kana: 'ジャイ イェン イェン', en: 'Take it easy / Calm down', jp: 'おちついて', emoji: '🧘',
+            tip: 'A magic phrase when a friend is upset — Thai people love it.' },
+          { thai: 'ไปด้วยกันนะ', roman: 'pai dûai-kan ná', kana: 'パイ ドゥアイ ガン ナ', en: "Let's go together!", jp: 'いっしょに行こう', emoji: '🫶' },
+        ],
+      },
+      {
+        id: 'bye',
+        num: 6,
+        title: 'See You Tomorrow!',
+        emoji: '👋',
+        color: 'red',
+        intro: 'The day ends but the friendship does not. End every day so your new friends can\'t wait to see you tomorrow!',
+        phrases: [
+          { thai: 'สนุกมากเลยวันนี้', roman: 'sà-nùk mâak loei wan-níi', kana: 'サヌック マーク ルーイ ワン ニー', en: 'Today was SO fun!', jp: 'きょうたのしかった！', emoji: '🎉' },
+          { thai: 'เล่นด้วยกันอีกนะ', roman: 'lên dûai-kan ìik ná', kana: 'レン ドゥアイ ガン イーク ナ', en: "Let's play again!", jp: 'またあそぼうね', emoji: '🔁' },
+          { thai: 'เธอเป็นเพื่อนที่ดีที่สุด', roman: 'thoe pen phûean thîi-dii thîi-sùt', kana: 'トゥー ペン プアン ティーディー ティースット', en: "You're the best friend!", jp: 'さいこうのともだち', emoji: '💖',
+            tip: 'The biggest compliment a kid can give — watch them beam!' },
+          { thai: 'พรุ่งนี้เจอกันนะ', roman: 'phrûng-níi joe kan ná', kana: 'プルン ニー ジュー ガン ナ', en: 'See you tomorrow!', jp: 'また明日ね', emoji: '🌅' },
+          { thai: 'คิดถึงนะ', roman: 'khít-thǔeng ná', kana: 'キット トゥン ナ', en: "I'll miss you!", jp: 'またね、さみしいな', emoji: '🥺' },
+          { thai: 'บ๊ายบาย', roman: 'báai-baai', kana: 'バイバイ', en: 'Bye bye!', jp: 'バイバイ', emoji: '👋' },
+        ],
+      },
+    ],
+
+    // ── Finale: meeting a new friend at camp (roleplay) ──
+    call: {
+      label: 'Meet a Friend!',
+      blurb: 'Make a brand-new friend at summer camp',
+      homeEmoji: '🧒🤝',
+      personaName: 'Ploy',
+      personaThai: 'พลอย',
+      personaRole: 'your new camp friend',
+      personaEmoji: '🧒',
+      personaPlace: "Regent's Summer Camp 🏕️",
+      steps: [
+        {
+          yaa: { thai: 'สวัสดีจ้ะ! เธอชื่ออะไร?', roman: 'sà-wàt-dii jâ! thoe chûe à-rai?', en: "Hi! What's your name?", jp: 'こんにちは！なまえは？' },
+          replies: [
+            { thai: 'สวัสดีครับ ผมชื่อ___ครับ', roman: 'sà-wàt-dii khráp, phǒm chûe ___ khráp', kana: 'サワッディー クラップ、ポム チュー ___ クラップ', en: "Hi! My name is ___", emoji: '🙋' },
+          ],
+        },
+        {
+          yaa: { thai: 'ยินดีที่ได้รู้จักนะ! เธอมาจากไหน?', roman: 'yin-dii thîi dâai rúu-jàk ná! thoe maa jàak nǎi?', en: 'Nice to meet you! Where are you from?', jp: 'はじめまして！どこから来たの？' },
+          replies: [
+            { thai: 'ผมมาจากญี่ปุ่นครับ', roman: 'phǒm maa jàak yîi-pùn khráp', kana: 'ポム マー ジャーク イープン クラップ', en: "I'm from Japan!", emoji: '🗾' },
+            { thai: 'ผมมาจากญี่ปุ่น พูดไทยได้นิดหน่อยครับ', roman: 'phǒm maa jàak yîi-pùn, phûut thai dâai nít-nòi khráp', kana: 'ポム マー ジャーク イープン、プート タイ ダーイ ニットノイ クラップ', en: 'From Japan — I speak a little Thai!', emoji: '🗣️', bonus: true },
+          ],
+        },
+        {
+          yaa: { thai: 'เก่งจังเลย! มาเป็นเพื่อนกันไหม?', roman: 'kèng jang loei! maa pen phûean kan mǎi?', en: 'So good! Want to be friends?', jp: 'すごい！おともだちになろう？' },
+          replies: [
+            { thai: 'เอาสิครับ! มาเป็นเพื่อนกัน', roman: 'ao sì khráp! maa pen phûean kan', kana: 'アオ シ クラップ！マー ペン プアン ガン', en: "Yes! Let's be friends!", emoji: '🤝' },
+            { thai: 'เธอใจดีจังครับ', roman: 'thoe jai-dii jang khráp', kana: 'トゥー ジャイ ディー ジャン クラップ', en: "You're so kind!", emoji: '💛', bonus: true },
+          ],
+        },
+        {
+          yaa: { thai: 'วันนี้เล่นอะไรกันดี?', roman: 'wan-níi lên à-rai kan dii?', en: 'What should we play today?', jp: 'きょうなにしてあそぶ？' },
+          replies: [
+            { thai: 'ว่ายน้ำกันไหมครับ', roman: 'wâai-náam kan mǎi khráp', kana: 'ワーイ ナーム ガン マイ クラップ', en: "Let's go swimming!", emoji: '🏊' },
+            { thai: 'วาดรูปกันไหมครับ', roman: 'wâat rûup kan mǎi khráp', kana: 'ワート ループ ガン マイ クラップ', en: "Let's draw!", emoji: '🎨' },
+            { thai: 'ทำขนมกันไหมครับ', roman: 'tham khà-nǒm kan mǎi khráp', kana: 'タム カノム ガン マイ クラップ', en: "Let's make snacks!", emoji: '🧁' },
+          ],
+        },
+        {
+          yaa: { thai: 'เยี่ยมเลย! ไปกันเลย!', roman: 'yîam loei! pai kan loei!', en: "Awesome! Let's go!", jp: 'いいね！行こう！' },
+          replies: [
+            { thai: 'ไปกันเลยครับ!', roman: 'pai kan loei khráp!', kana: 'パイ ガン ルーイ クラップ！', en: "Let's go!", emoji: '🏃' },
+            { thai: 'รอผมด้วยครับ!', roman: 'raw phǒm dûai khráp!', kana: 'ロー ポム ドゥアイ クラップ！', en: 'Wait for me!', emoji: '✋' },
+          ],
+        },
+        {
+          yaa: { thai: 'สนุกมากเลยวันนี้!', roman: 'sà-nùk mâak loei wan-níi!', en: 'Today was so much fun!', jp: 'きょうすごく楽しかった！' },
+          replies: [
+            { thai: 'ใช่! เธอเป็นเพื่อนที่ดีที่สุด', roman: 'châi! thoe pen phûean thîi-dii thîi-sùt', kana: 'チャイ！トゥー ペン プアン ティーディー ティースット', en: "Yes! You're the best friend!", emoji: '💖' },
+            { thai: 'สนุกจังเลยครับ!', roman: 'sà-nùk jang loei khráp!', kana: 'サヌック ジャン ルーイ クラップ！', en: 'That was SO fun!', emoji: '😄' },
+          ],
+        },
+        {
+          yaa: { thai: 'พรุ่งนี้เจอกันนะ!', roman: 'phrûng-níi joe kan ná!', en: 'See you tomorrow!', jp: 'また明日ね！' },
+          replies: [
+            { thai: 'พรุ่งนี้เจอกันนะครับ บ๊ายบาย!', roman: 'phrûng-níi joe kan ná khráp, báai-baai!', kana: 'プルン ニー ジュー ガン ナ クラップ、バイバイ！', en: 'See you tomorrow, bye bye!', emoji: '👋' },
+          ],
+        },
+      ],
+    },
+
+    // ── Mission-specific badges ──
+    badges: [
+      { id: 'icebreaker',  emoji: '🧊', name: 'Ice Breaker',  desc: 'Learned how to make a new friend',  when: { quest: 'friend', need: 'learn' } },
+      { id: 'camp-pro',    emoji: '🎒', name: 'Camp Pro',     desc: 'Finished the At Camp quest',         when: { quest: 'campday', need: 'complete' } },
+      { id: 'splash',      emoji: '🏊', name: 'Splash Star',  desc: "Mastered the Let's Play words",      when: { quest: 'play', need: 'listen2' } },
+      { id: 'brave-heart', emoji: '💗', name: 'Brave Heart',  desc: 'Learned to say how you feel',        when: { quest: 'feelings', need: 'learn' } },
+      { id: 'kind-kid',    emoji: '🌟', name: 'Kind Kid',     desc: 'Finished Be a Good Friend',          when: { quest: 'kind', need: 'complete' } },
+      { id: 'new-buddy',   emoji: '🤝', name: 'New Buddy',    desc: 'Made a friend in the camp roleplay', when: { call: true } },
+      { id: 'camp-legend', emoji: '🏆', name: 'Camp Legend',  desc: 'Finished every single quest',        when: { allQuests: 'learn' } },
     ],
   },
 ];

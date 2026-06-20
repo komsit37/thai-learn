@@ -741,7 +741,7 @@ function drawChat() {
     ${header()}
     <div class="screen-head">
       <button class="backbtn" onclick="renderHome()">←</button>
-      <div><h2>📞 Video Call</h2><div class="sub">Talking with ${esc(call.personaName)} (${call.personaName === 'Yaa' ? 'Grandma' : esc(call.personaName)})</div></div>
+      <div><h2>📞 Video Call</h2><div class="sub">Talking with ${esc(call.personaName)}${call.personaRole ? ` (${esc(call.personaRole)})` : ''}</div></div>
     </div>
     <div class="call-frame">
       <div class="call-head">
