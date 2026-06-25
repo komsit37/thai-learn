@@ -132,8 +132,8 @@ function keyedPhrases(q) { return q.phrases.map((p, i) => ({ ...p, key: `${state
 // all quiz-able phrases from quests (in the active mission) whose Learn step is done
 function reviewPool() {
   const pool = [];
-  quests().forEach((q, i) => {
-    if (questUnlocked(i) && prog(q.id).learn) {
+  quests().forEach((q) => {
+    if (prog(q.id).learn) {
       keyedPhrases(q).forEach(p => { if (!p.blank) pool.push(p); });
     }
   });
@@ -227,10 +227,6 @@ function header() {
   `;
 }
 
-function questUnlocked(i) {
-  return i === 0 || prog(quests()[i - 1].id).learn;
-}
-
 function starsFor(mid) {
   const p = prog(mid);
   return (p.learn ? 1 : 0) + p.listen + p.speak;
@@ -245,7 +241,7 @@ function renderHome() {
   speechSynthesis.cancel();
   const m = cur();
   const qs = quests();
-  let firstUnfinished = qs.findIndex((q, i) => questUnlocked(i) && starsFor(q.id) < 7);
+  let firstUnfinished = qs.findIndex((q) => starsFor(q.id) < 7);
   const pool = reviewPool();
   const due = Adapt.dueCount(pool.map(p => p.key));
   const call = m.call;
@@ -277,14 +273,13 @@ function renderHome() {
     </div>
     <div class="path">
       ${qs.map((q, i) => {
-        const unlocked = questUnlocked(i);
         const st = Adapt.missionStats(`${m.id}:${q.id}`, q.phrases.length);
-        const showLvl = unlocked && prog(q.id).learn;
+        const showLvl = prog(q.id).learn;
         return html`
-        <div class="mission-card c-${q.color} ${unlocked ? '' : 'locked'}"
-             onclick="${unlocked ? `renderMission('${q.id}')` : `Audio_.boop()`}">
+        <div class="mission-card c-${q.color}"
+             onclick="renderMission('${q.id}')">
           ${i === firstUnfinished ? '<span class="here">YOU ARE HERE</span>' : ''}
-          <div class="m-emoji">${unlocked ? q.emoji : '🔒'}</div>
+          <div class="m-emoji">${q.emoji}</div>
           <div>
             <div class="m-num">Quest ${q.num}</div>
             <h3>${q.title}</h3>
