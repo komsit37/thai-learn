@@ -49,6 +49,7 @@ function normalizeProfile(p) {
     streak: p.streak || { last: null, count: 0 },
     callDone: p.callDone || {},        // missionId -> bool
     adapt: p.adapt || {},              // spaced-repetition store
+    exam: p.exam || null,              // Big Challenge best/last score
     activeMission: p.activeMission || MISSIONS[0].id,
     createdAt: p.createdAt || new Date().toISOString(),
     updatedAt: p.updatedAt || new Date().toISOString(),
@@ -716,6 +717,222 @@ function finishSpeak() {
   });
 }
 
+// ── BIG CHALLENGE: cross-mission final exam (HARD mode) ──────────
+// Pulls every LEARNED, quizzable phrase from EVERY mission and asks
+// tougher, crutch-free questions: NO katakana, NO romanization, NO
+// emoji on the answers (the kid leans on the kana, so hard mode hides
+// it). Three question shapes keep it honest:
+//   read    → see Thai script, pick the meaning   (can you read it?)
+//   produce → see the meaning, pick the Thai       (can you recall it?)
+//   listen  → hear it, pick the Thai script        (can you spell it by ear?)
+// Records a pass/fail score (80% gate) and reports which missions
+// were weakest so the kid knows what to go back and review. Every
+// answer also feeds the spaced-repetition engine.
+
+const EXAM_PASS = 0.8;     // fraction correct needed to pass the gate
+const EXAM_MAX_Q = 15;     // cap so it stays kid-sized
+const EXAM_TYPES = ['read', 'produce', 'listen'];
+const EXAM_TYPE_INFO = {
+  read:    { chip: '📖 read the Thai', q: 'What does this mean?' },
+  produce: { chip: '🧠 from memory',   q: 'Which one is Thai for this?' },
+  listen:  { chip: '👂 no hints',      q: 'Tap the Thai you hear!' },
+};
+
+const examGame = { rounds: [], idx: 0, score: 0, answered: false, miss: {} };
+
+// Every learned phrase across ALL missions, tagged with where it came
+// from so we can report weak missions afterward.
+function examPool() {
+  const pool = [];
+  MISSIONS.forEach(m => {
+    const mp = state.progress[m.id] || {};
+    m.quests.forEach(q => {
+      if (!(mp[q.id] && mp[q.id].learn)) return;   // only quiz what's been learned
+      q.phrases.forEach((p, i) => {
+        if (p.blank) return;
+        pool.push({ ...p, key: `${m.id}:${q.id}:${i}`,
+          missionId: m.id, missionTitle: m.title, missionEmoji: m.emoji });
+      });
+    });
+  });
+  return pool;
+}
+
+// How exam-ready a mission is, judged by the mastery (Leitner box) of
+// its LEARNED phrases. null = nothing learned yet, so no hint to show.
+function missionExamReadiness(missionId) {
+  const m = MISSIONS.find(x => x.id === missionId);
+  const mp = state.progress[missionId] || {};
+  const boxes = [];
+  m.quests.forEach(q => {
+    if (!(mp[q.id] && mp[q.id].learn)) return;
+    q.phrases.forEach((p, i) => {
+      if (p.blank) return;
+      boxes.push(Adapt.strength(`${missionId}:${q.id}:${i}`));
+    });
+  });
+  if (!boxes.length) return null;
+  const avg = boxes.reduce((a, b) => a + b, 0) / boxes.length;
+  if (avg < 1.2) return { emoji: '🌱', label: 'keep practicing', cls: 'low' };
+  if (avg < 2.8) return { emoji: '⭐', label: 'almost ready',    cls: 'mid' };
+  return { emoji: '🏆', label: 'exam ready', cls: 'hi' };
+}
+
+function buildExamRounds(pool, n) {
+  const types = shuffle(Array.from({ length: n }, (_, i) => EXAM_TYPES[i % EXAM_TYPES.length]));
+  return Adapt.pickWeighted(pool, n).map((target, i) => {
+    // distractors prefer the SAME mission (more confusable), then anywhere
+    const sameM = shuffle(pool.filter(p => p.key !== target.key && p.missionId === target.missionId));
+    const other = shuffle(pool.filter(p => p.key !== target.key && p.missionId !== target.missionId));
+    const wrong = [...sameM, ...other].slice(0, 3);
+    return { target, options: shuffle([target, ...wrong]), type: types[i] };
+  });
+}
+
+function startExam() {
+  const pool = examPool();
+  if (pool.length < 4) return Audio_.boop();
+  examGame.rounds = buildExamRounds(pool, Math.min(EXAM_MAX_Q, pool.length));
+  examGame.idx = 0;
+  examGame.score = 0;
+  examGame.miss = {};
+  renderExamRound();
+}
+
+function examOption(o, i, type) {
+  // 'read' answers are meanings (English); the rest are Thai script.
+  if (type === 'read') {
+    return html`<button class="option" id="opt-${i}" onclick="answerExam(${i})">${esc(o.en)}</button>`;
+  }
+  return html`<button class="option thai-opt" id="opt-${i}" onclick="answerExam(${i})">${esc(o.thai)}</button>`;
+}
+
+function renderExamRound() {
+  const g = examGame;
+  if (g.idx >= g.rounds.length) return finishExam();
+  const r = g.rounds[g.idx];
+  const t = EXAM_TYPE_INFO[r.type];
+  const thai = fillName(r.target.thai);
+  g.answered = false;
+  app.innerHTML = html`
+    ${header()}
+    <div class="screen-head">
+      <button class="backbtn" onclick="renderMissionSelect()">←</button>
+      <div><h2>🎓 Big Challenge</h2><div class="sub">Hard mode · every mission · no hints!</div></div>
+    </div>
+    <div class="quiz-top">
+      <span class="score-pill">Q${g.idx + 1}/${g.rounds.length}</span>
+      <div class="progress-track"><div class="progress-fill" style="width:${g.idx / g.rounds.length * 100}%"></div></div>
+      <span class="score-pill">✅ ${g.score}</span>
+    </div>
+    <div class="quiz-hint"><span class="diff-chip">${t.chip}</span></div>
+    ${r.type === 'produce'
+      ? html`<div class="exam-prompt"><div class="ex-emoji">${r.target.emoji}</div>
+               <div class="ex-mean">${esc(r.target.en)}</div>
+               <div class="ex-jp">${esc(r.target.jp || '')}</div></div>`
+      : r.type === 'read'
+      ? html`<div class="exam-prompt"><div class="ex-thai">${esc(thai)}</div>
+               <button class="soundbtn slow" onclick="Audio_.speak(${esc(JSON.stringify(thai))})">🔊 hear it</button></div>`
+      : html`<button class="earbtn" onclick="Audio_.speak(${esc(JSON.stringify(thai))})">👂</button>`}
+    <div class="quiz-hint">${t.q}</div>
+    <div class="options">${r.options.map((o, i) => examOption(o, i, r.type)).join('')}</div>
+  `;
+  if (r.type === 'listen') setTimeout(() => Audio_.speak(thai), 400);
+}
+
+function answerExam(i) {
+  const g = examGame;
+  if (g.answered) return;
+  g.answered = true;
+  const r = g.rounds[g.idx];
+  const correct = r.options[i].key === r.target.key;
+  Adapt.record(r.target.key, 'listen', correct);   // exam results feed spaced repetition
+  const mid = r.target.missionId;
+  const tally = g.miss[mid] || (g.miss[mid] =
+    { id: mid, title: r.target.missionTitle, emoji: r.target.missionEmoji, wrong: 0, total: 0 });
+  tally.total++;
+  const btn = document.getElementById('opt-' + i);
+  if (correct) {
+    g.score++;
+    btn.classList.add('correct');
+    Audio_.ding();
+  } else {
+    tally.wrong++;
+    btn.classList.add('wrong');
+    Audio_.boop();
+    const right = r.options.findIndex(o => o.key === r.target.key);
+    document.getElementById('opt-' + right).classList.add('reveal');
+  }
+  setTimeout(() => { g.idx++; renderExamRound(); }, correct ? 850 : 1700);
+}
+
+function finishExam() {
+  const g = examGame;
+  const total = g.rounds.length;
+  const pct = Math.round(g.score / total * 100);
+  const passed = g.score / total >= EXAM_PASS;
+
+  // record best/last + a rolling history on the profile (once passed, stays passed)
+  const prev = state.exam || {};
+  const history = (prev.history || [])
+    .concat([{ date: todayStr(), pct, score: g.score, total, passed }])
+    .slice(-12);   // keep it lightweight — last dozen attempts
+  state.exam = {
+    bestPct: Math.max(prev.bestPct || 0, pct),
+    lastPct: pct, lastScore: g.score, lastTotal: total,
+    passed: passed || !!prev.passed,
+    attempts: (prev.attempts || 0) + 1,
+    date: todayStr(),
+    history,
+  };
+  if (passed) { addXP(50); earnBadge('exam-ace'); }
+  bumpStreak();
+  save();
+  if (passed) { confetti(120); Audio_.fanfare(); } else Audio_.boop();
+
+  // weak missions = any with wrong answers, worst miss-rate first
+  const weak = Object.values(g.miss).filter(m => m.wrong > 0)
+    .sort((a, b) => (b.wrong / b.total) - (a.wrong / a.total) || b.wrong - a.wrong);
+
+  app.innerHTML = html`
+    ${header()}
+    <div class="result-card exam-result ${passed ? 'pass' : 'fail'}">
+      <div class="r-stars"><span class="lit">${passed ? '🎓' : '📚'}</span></div>
+      <h2>${passed ? 'YOU PASSED!' : 'Not yet — keep training!'}</h2>
+      <div class="exam-score">${g.score}/${total} · ${pct}%</div>
+      <div class="exam-gate ${passed ? 'pass' : 'fail'}">
+        ${passed
+          ? `⭐ PASS — you needed ${Math.round(EXAM_PASS * 100)}% and nailed it!`
+          : `Need ${Math.round(EXAM_PASS * 100)}% to pass — you're close!`}
+      </div>
+      ${state.exam.bestPct > pct ? `<p class="exam-best">🏅 Your best so far: ${state.exam.bestPct}%</p>` : ''}
+      ${passed ? `<div class="xp-burst">+50 XP 🎓</div>` : ''}
+      ${weak.length ? html`
+        <div class="exam-review">
+          <h3>📌 Go review these missions:</h3>
+          ${weak.map(w => html`
+            <button class="review-row" onclick="selectMission('${w.id}')">
+              <span class="rev-name">${w.emoji} ${esc(w.title.replace(/^Mission:\s*/, ''))}</span>
+              <span class="rev-bad">missed ${w.wrong}/${w.total}</span>
+            </button>`).join('')}
+        </div>`
+        : `<p class="exam-allgood">🌟 Every mission solid — nothing to review!</p>`}
+      ${state.exam.history.length > 1 ? html`
+        <div class="exam-history">
+          <h3>📊 Past scores</h3>
+          <div class="hist-row">
+            ${state.exam.history.slice().reverse().map((h, i) => html`
+              <span class="hist-pill ${h.passed ? 'pass' : 'fail'}${i === 0 ? ' now' : ''}">${h.pct}%</span>`).join('')}
+          </div>
+        </div>` : ''}
+      <div class="navrow">
+        <button class="navbtn" onclick="renderMissionSelect()">🗺️ Missions</button>
+        <button class="navbtn primary" onclick="startExam()">🔁 Try again</button>
+      </div>
+    </div>
+  `;
+}
+
 // ── TALK: video-call roleplay (persona + script from cur().call) ──
 const chat = { step: 0, log: [] };
 function callCfg() { return cur().call; }
@@ -983,10 +1200,26 @@ function renderMissionSelect() {
       <button class="backbtn" onclick="renderPicker()">←</button>
       <div><h2>Choose your mission</h2><div class="sub">Tap a mission to start!</div></div>
     </div>
+    ${(() => {
+      const pool = examPool();
+      if (pool.length < 6) return '';   // unlock once enough has been learned
+      const ex = state.exam;
+      const badge = ex
+        ? (ex.passed ? `✅ passed · best ${ex.bestPct}%` : `best ${ex.bestPct}%`)
+        : `${pool.length} words ready`;
+      return html`
+      <button class="bigbtn exam" onclick="startExam()">
+        <span class="big-emoji">🎓</span>
+        Big Challenge — Final Exam
+        <span class="due-badge">${badge}</span>
+        <small>Hard mode • every mission • no katakana hints</small>
+      </button>`;
+    })()}
     <div class="path">
       ${MISSIONS.map(m => {
         const mp = state.progress[m.id] || {};
         const started = m.quests.filter(q => (mp[q.id] || {}).learn).length;
+        const rd = missionExamReadiness(m.id);
         return html`
         <div class="mission-card c-${m.color}" onclick="selectMission('${m.id}')">
           <div class="m-emoji">${m.emoji}</div>
@@ -994,6 +1227,7 @@ function renderMissionSelect() {
             <h3>${m.title}</h3>
             <div class="m-blurb">${m.blurb}</div>
             <div class="m-stars">${started}/${m.quests.length} quests started</div>
+            ${rd ? `<div class="exam-ready ${rd.cls}">🎓 ${rd.emoji} ${rd.label}</div>` : ''}
           </div>
         </div>`;
       }).join('')}

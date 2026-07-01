@@ -1702,6 +1702,7 @@ const GLOBAL_BADGES = [
   { id: 'brave-voice', emoji: '🎤', name: 'Brave Voice', desc: '3 stars in a Speak challenge' },
   { id: 'streak-3',    emoji: '🔥', name: 'On Fire',     desc: 'Practiced 3 days in a row' },
   { id: 'streak-7',    emoji: '🌋', name: 'Unstoppable', desc: 'Practiced 7 days in a row' },
+  { id: 'exam-ace',    emoji: '🎓', name: 'Exam Ace',    desc: 'Passed the Big Challenge final exam' },
 ];
 
 // Kid-friendly avatars for profile picking.
