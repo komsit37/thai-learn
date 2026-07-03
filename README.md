@@ -11,8 +11,7 @@ python3 -m http.server 8000
 ```
 
 Open **http://localhost:8000** in **Google Chrome** (important — Chrome has the Thai
-text-to-speech voice and the Thai speech recognition that powers the mic game).
-Works great on a laptop or iPad (use Chrome there too).
+text-to-speech voice). Works great on a laptop or iPad (use Chrome there too).
 
 It's a plain static site, so you can also drop it on **GitHub Pages** (or any static
 host) and open it from anywhere — no server or build step.
@@ -21,7 +20,7 @@ host) and open it from anywhere — no server or build step.
 
 The app is a multi-**Mission** platform. Adding another (Tokyo, Chiang Mai…) is just
 one object appended to `MISSIONS` in `js/data.js`. Each Mission contains **Quests**
-(the topics), and each Quest has three steps: **Learn → Listen → Speak**. A Mission
+(the topics), and each Quest has two steps: **Learn → Listen**. A Mission
 also carries its own video-call finale and badges. Kids pick a Mission from the
 "Choose your mission" screen. Two missions ship today:
 
@@ -51,25 +50,21 @@ also carries its own video-call finale and badges. Kids pick a Mission from the
   romanization with tone accents, and **katakana hints** — since he reads Japanese
   fluently, サワッディー クラップ clicks faster than "sawatdee krap".
   Japanese meanings shown too.
-- **Learn → Listen → Speak** loop per mission:
+- **Learn → Listen** loop per mission:
   - *Learn*: flip-through phrase cards with normal + slow ( 🐢 ) Thai audio.
   - *Listen game*: hear a phrase, tap the right meaning (builds on his listening strength).
-  - *Speak challenge*: real speech recognition in Thai grades his pronunciation —
-    "PERFECT! เก่งมาก!" with confetti when he nails it.
 - **📞 Call Yaa**: a simulated video call with grandma (ย่า, dad's side) — she
   speaks Thai out loud, he picks (and hears) his replies. The exact conversation
   he'll have in real life.
 - **Adaptive difficulty** (`js/adapt.js`): every phrase has a mastery level
-  (Leitner box 0–4) updated on each listen/speak answer.
+  (Leitner box 0–4) updated on each answer.
   - Weak and overdue phrases show up more often in every game.
   - Listen quiz gets harder per phrase as he masters it: emoji + English options
     → English only → **Thai-script options** (he must read what he heard).
-  - Speak challenge: the pronunciation pass bar rises with mastery, and mastered
-    phrases go into "memory mode" (no warm-up audio — produce it yourself).
   - **⚡ Daily Power-Up** on the home screen: spaced-repetition mixed review
     across all learned missions (intervals 0/1/2/4/7 days), with a "words to
     rescue" counter so early missions stay fresh until the trip.
-- **Gamification**: stars, XP, daily streak, 10 badges, mission skill levels
+- **Gamification**: stars, XP, daily streak, badges, mission skill levels
   (🌱 Rookie → ⭐ Pro → 🏆 Superstar), and a tuk-tuk countdown of days until
   the trip.
 
@@ -82,8 +77,6 @@ also carries its own video-call finale and badges. Kids pick a Mission from the
 - Progress lives in the browser (localStorage), per profile. It stays on that browser +
   device; use ⚙️ → **Export** and **Import a player** (on the picker) to move a kid to
   another device. Each kid gets their own avatar, stars, streak, and review schedule.
-- The mic game needs mic permission on first use; if the browser has no speech
-  recognition it falls back to honor-system practice ("I said it!").
 - A great routine for the month: one quest's *Learn* per weekend, games on
   weekdays (10 min), and **Call Yaa** together every few days — then try a real
   video call with the family.
