@@ -22,14 +22,36 @@ The app is a multi-**Mission** platform. Adding another (Tokyo, Chiang Mai…) i
 one object appended to `MISSIONS` in `js/data.js`. Each Mission contains **Quests**
 (the topics), and each Quest has two steps: **Learn → Listen**. A Mission
 also carries its own video-call finale and badges. Kids pick a Mission from the
-"Choose your mission" screen. Two missions ship today:
+"Choose your mission" screen. Fifteen missions ship today:
 
 - **Mission: Bangkok** 🛺 — talk to the Thai family on the next trip. 8 quests +
-  a video call with Grandma (Yaa).
+  a video call with Grandma (Yâa).
 - **Mission: Summer Camp** 🏕️ — **how to make friends in Thai** at Regent's Summer
-  Camp. 6 quests (Make a New Friend · At Camp · Let's Play! · How I Feel · Be a Good
-  Friend · See You Tomorrow!) + a roleplay where he meets a new camp friend, Ploy.
+  Camp. 6 quests + a roleplay where he meets a new camp friend, Ploy.
   All boy-speech (ผม/ครับ); the finale persona is a peer, not a grown-up.
+- **Mission: Go Shopping** 🛍️ — markets, malls, prices and paying.
+- **Mission: Temple & Day Out** 🛕 — a day out with Grandpa Pùu: the temple,
+  making merit and a wish.
+- **Mission: Let's Eat Out!** 🍜 — restaurants: find a table, order, enjoy, pay.
+- **Mission: Songkran** 💦 — Thai New Year water festival with Auntie Pâa.
+- **Mission: Beach Day** 🏖️ — sea, sandcastles and snacks with cousin Phîi-Nam.
+- **Mission: Zoo Day** 🐘 — animal names and a zoo day with Dad (Phâw).
+- **Mission: Feeling Sick** 🤒 — telling grown-ups how you feel + a brave
+  clinic visit to Khun-Mǎw.
+- **Mission: At Grandma's House** 🏠 — helping, dinner manners, chores and
+  bedtime with Yaai.
+- **Mission: Airplane & Airport** ✈️ — packing, boarding, flying and landing;
+  finale is the whole flight with Mom (Mâe).
+- **Mission: Birthday Party** 🎂 — birthday blessings, cake, presents and party
+  games at cousin Phîi-Fáa's party.
+- **Mission: Getting Around** 🚕 — tuk-tuks, taxis, the BTS sky train and river
+  boats, zooming around Bangkok with Uncle (Lung).
+- **Mission: Cooking with Grandma** 🍳 — ingredients, chef moves and taste
+  tests; finale is making fried rice with Yâa.
+- **Mission: Loy Krathong** 🪔 — the festival of floating lights: make a
+  krathong, wish, lanterns and treats with Grandpa Taa.
+
+Plus a **Big Challenge** 🎓 — a cross-mission hard-mode final exam.
 
 ## Profiles (multiple kids)
 
