@@ -22,7 +22,7 @@ The app is a multi-**Mission** platform. Adding another (Tokyo, Chiang Mai…) i
 one object appended to `MISSIONS` in `js/data.js`. Each Mission contains **Quests**
 (the topics), and each Quest has two steps: **Learn → Listen**. A Mission
 also carries its own video-call finale and badges. Kids pick a Mission from the
-"Choose your mission" screen. Fifteen missions ship today:
+"Choose your mission" screen. Twenty missions ship today:
 
 - **Mission: Bangkok** 🛺 — talk to the Thai family on the next trip. 8 quests +
   a video call with Grandma (Yâa).
@@ -50,6 +50,16 @@ also carries its own video-call finale and badges. Kids pick a Mission from the
   tests; finale is making fried rice with Yâa.
 - **Mission: Loy Krathong** 🪔 — the festival of floating lights: make a
   krathong, wish, lanterns and treats with Grandpa Taa.
+- **Mission: School Day** 🏫 — a whole day at a Thai school: greet the teacher,
+  classroom words, subjects, recess and home time with Khruu Nok.
+- **Mission: Getting Ready** 🪥 — the morning routine: wake up, brush, dress,
+  breakfast and out the door with Mom (Mâe).
+- **Mission: Rainy Day** 🌧️ — rain words, staying dry, cozy indoor fun and a
+  rainbow with big cousin Ple.
+- **Mission: Farm Visit** 🐓 — countryside, farm animals, feeding and a buffalo
+  cart ride with Uncle (Lung).
+- **Mission: Sports & Play** ⚽ — warm-ups, kicking, teamwork and good
+  sportsmanship at the park with his friend Bank.
 
 Plus a **Big Challenge** 🎓 — a cross-mission hard-mode final exam.
 
